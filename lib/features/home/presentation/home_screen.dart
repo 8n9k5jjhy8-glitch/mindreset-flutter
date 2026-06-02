@@ -1,0 +1,877 @@
+import 'package:flutter/material.dart';
+import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../app/router.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../biometrics/data/biometrics_repository.dart';
+import '../../intervention/data/models/session_record.dart';
+import '../../intervention/data/repositories/sessions_repository.dart';
+import '../../profile/data/profile_service.dart';
+import '../../profile/domain/user_context.dart';
+import '../domain/state_level.dart';
+import 'widgets/state_hero.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen>
+    with WidgetsBindingObserver {
+  int _stressLevel = 1;
+
+  final SessionsRepository _sessionsRepository = SessionsRepository();
+  final ProfileService _profileService = ProfileService();
+  final BiometricsRepository _biometricsRepository = BiometricsRepository();
+
+  SessionRecord? _activeSession;
+
+  UserContext? _userContext;
+  bool _isLoadingUserContext = true;
+
+  BiometricsSnapshot? _biometricsSnapshot;
+  bool _isLoadingBiometrics = true;
+
+  StateLevel get _currentLevel => StateLevel.values[_stressLevel - 1];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshAll();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed && mounted) {
+      _loadBiometrics();
+    }
+  }
+
+  String _resolveUserName(User? user, AppLocalizations l10n) {
+    final metadata = user?.userMetadata;
+
+    final nameFromName = metadata?['name']?.toString().trim();
+    if (nameFromName != null && nameFromName.isNotEmpty) {
+      return nameFromName;
+    }
+
+    final nameFromFullName = metadata?['full_name']?.toString().trim();
+    if (nameFromFullName != null && nameFromFullName.isNotEmpty) {
+      return nameFromFullName;
+    }
+
+    final email = user?.email?.trim();
+    if (email != null && email.isNotEmpty && email.contains('@')) {
+      return email.split('@').first;
+    }
+
+    return l10n.userFallbackName;
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([
+      _loadLatestSession(),
+      _loadUserContext(),
+      _loadBiometrics(),
+    ]);
+  }
+
+  Future<void> _loadLatestSession() async {
+    try {
+      final recent = await _sessionsRepository.fetchRecentSessions(limit: 5);
+
+      if (!mounted) return;
+
+      SessionRecord? activeSession;
+      for (final session in recent) {
+        if (session.status == 'started' || session.status == 'in_progress') {
+          activeSession = session;
+          break;
+        }
+      }
+
+      setState(() {
+        _activeSession = activeSession;
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  Future<void> _loadUserContext() async {
+    try {
+      final contextData = await _profileService.getUserContext();
+
+      if (!mounted) return;
+
+      setState(() {
+        _userContext = contextData;
+        _isLoadingUserContext = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingUserContext = false;
+      });
+    }
+  }
+
+  Future<void> _loadBiometrics() async {
+    setState(() {
+      _isLoadingBiometrics = true;
+    });
+
+    try {
+      final snapshot = await _biometricsRepository.fetchLatestSnapshot();
+
+      if (!mounted) return;
+
+      setState(() {
+        _biometricsSnapshot = snapshot;
+
+        if (snapshot.isAvailable) {
+          final resolvedStateScore =
+              snapshot.stateScore >= 1 && snapshot.stateScore <= 4
+                  ? snapshot.stateScore
+                  : _mapStressIndexToStateScore(snapshot.stressIndex);
+
+          if (resolvedStateScore >= 1 && resolvedStateScore <= 4) {
+            _stressLevel = resolvedStateScore;
+          }
+        }
+
+        _isLoadingBiometrics = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingBiometrics = false;
+      });
+    }
+  }
+
+  int _mapStressIndexToStateScore(int stressIndex) {
+    if (stressIndex >= 75) return 4;
+    if (stressIndex >= 50) return 3;
+    if (stressIndex >= 25) return 2;
+    return 1;
+  }
+
+  Future<void> _openIntervention({required String source}) async {
+    final l10n = AppLocalizations.of(context)!;
+    final resolvedModeTitle = _buildPersonalizedModeTitle();
+    final resolvedModeKey = _modeKeyFromTitle(resolvedModeTitle);
+
+    final sessionId = await _sessionsRepository.createSession(
+      modeKey: resolvedModeKey,
+      modeTitle: resolvedModeTitle,
+      stressLevel: _currentLevel.number,
+      stressTitle: _currentLevel.title(l10n),
+      source: source,
+    );
+
+    if (!mounted) return;
+    if (sessionId == null || sessionId.isEmpty) return;
+
+    await _loadLatestSession();
+
+    if (!mounted) return;
+
+    await context.push(
+      AppRoutes.intervention,
+      extra: {
+        'sessionId': sessionId,
+        'modeTitle': resolvedModeTitle,
+        'source': source,
+        'stressLevel': _currentLevel.number,
+        'stressTitle': _currentLevel.title(l10n),
+        'status': 'started',
+      },
+    );
+
+    if (!mounted) return;
+    await _loadLatestSession();
+  }
+
+  Future<void> _resumeActiveSession() async {
+    final session = _activeSession;
+    if (session == null) return;
+
+    await context.push(
+      AppRoutes.intervention,
+      extra: {
+        'sessionId': session.id,
+        'modeTitle': session.modeTitle,
+        'source': session.source,
+        'stressLevel': session.stressLevel,
+        'stressTitle': session.stressTitle,
+        'status': session.status,
+      },
+    );
+
+    if (!mounted) return;
+    await _loadLatestSession();
+  }
+
+  void _openModesTab() {
+    context.go(AppRoutes.modes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final level = _currentLevel;
+    final user = Supabase.instance.client.auth.currentUser;
+    final userName = _resolveUserName(user, l10n);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refreshAll,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _TopHeader(),
+                    Transform.translate(
+                      offset: const Offset(0, -10),
+                      child: _GreetingBlock(userName: userName),
+                    ),
+                    const SizedBox(height: 4),
+                    _TopVitalsRow(
+                      snapshot: _biometricsSnapshot,
+                      level: level,
+                      isLoading: _isLoadingBiometrics,
+                    ),
+                    const SizedBox(height: 14),
+                    StateHero(
+                      level: level,
+                      isRefreshing: false,
+                    ),
+                    const SizedBox(height: 12),
+                    _AiRecommendationCard(
+                      title: _buildRecommendationTitle(level, l10n),
+                      subtitle: _buildRecommendationSubtitle(level, l10n),
+                      onTap: () {
+                        _openIntervention(source: 'home_ai_recommendation');
+                      },
+                    ),
+                    if (_activeSession != null) ...[
+                      const SizedBox(height: 10),
+                      _ResumeSessionCard(
+                        session: _activeSession!,
+                        title: l10n.resumeSessionTitle,
+                        sessionMeta: l10n.sessionMeta(
+                          _activeSession!.modeTitle,
+                          _activeSession!.stressTitle,
+                        ),
+                        onTap: _resumeActiveSession,
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    _OpenModesCard(
+                      title: l10n.openModesTitle,
+                      subtitle: l10n.openModesSubtitle,
+                      onTap: _openModesTab,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _buildRecommendationTitle(
+    StateLevel level,
+    AppLocalizations l10n,
+  ) {
+    final context = _userContext;
+
+    if (context == null || _isLoadingUserContext) {
+      switch (level.number) {
+        case 1:
+          return l10n.recommendedKeepRhythm;
+        case 2:
+          return l10n.recommendedShortReset;
+        case 3:
+          return l10n.recommendedRecovery;
+        case 4:
+          return l10n.recommendedUrgentHelp;
+        default:
+          return l10n.recommendedHelp;
+      }
+    }
+
+    if (context.isHighStress) {
+      return l10n.aiRecommendsFastCalming;
+    }
+
+    if (context.isLowEnergy) {
+      return l10n.aiRecommendsEnergyBoost;
+    }
+
+    if (context.hasUnstableSleep) {
+      return l10n.aiRecommendsCarefulRecovery;
+    }
+
+    if (context.needsShortInterventions) {
+      return l10n.aiRecommendsShortPractice;
+    }
+
+    return l10n.aiRecommendsSuitableMode;
+  }
+
+  String _buildRecommendationSubtitle(
+    StateLevel level,
+    AppLocalizations l10n,
+  ) {
+    final context = _userContext;
+
+    if (context == null || _isLoadingUserContext) {
+      switch (level.number) {
+        case 1:
+          return l10n.stableStateDescription;
+        case 2:
+          return l10n.tensionStateDescription;
+        case 3:
+          return l10n.highLoadDescription;
+        case 4:
+          return l10n.criticalStateDescription;
+        default:
+          return l10n.chooseSupportFormat;
+      }
+    }
+
+    final duration = switch (context.recommendedInterventionDuration) {
+      'short' => l10n.shortPracticeDuration,
+      'long' => l10n.longPracticeDuration,
+      _ => l10n.mediumPracticeDuration,
+    };
+
+    final tone = switch (context.recommendedTone) {
+      'calming' => l10n.toneCalming,
+      'energizing' => l10n.toneEnergizing,
+      _ => l10n.toneBalanced,
+    };
+
+    return l10n.aiPersonalRecommendation(duration, tone);
+  }
+
+  String _buildPersonalizedModeTitle() {
+  final l10n = AppLocalizations.of(context)!;
+  return l10n.appTitle;
+}
+
+  String _modeKeyFromTitle(String title) {
+    final l10n = AppLocalizations.of(context)!;
+
+    switch (title) {
+      case var value when value == l10n.modeCalm:
+        return 'calm';
+      case var value when value == l10n.modeNeedEnergy:
+        return 'energy';
+      case var value when value == l10n.modeSleepPreparation:
+        return 'sleep';
+      case var value when value == l10n.modeFocus:
+        return 'focus';
+      case var value when value == l10n.modeQuickReset:
+        return 'quick_reset';
+      case var value when value == l10n.modeRecovery:
+        return 'recovery';
+      case var value when value == l10n.modeUrgentHelp:
+        return 'urgent_help';
+      case var value when value == l10n.modeSoftSupport:
+        return 'soft_support';
+      default:
+        return 'custom';
+    }
+  }
+}
+
+class _TopHeader extends StatelessWidget {
+  const _TopHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 2),
+        child: Image.asset(
+          'assets/images/logo_new.png',
+          height: 122,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
+        ),
+      ),
+    );
+  }
+}
+
+class _GreetingBlock extends StatelessWidget {
+  const _GreetingBlock({required this.userName});
+
+  final String userName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final hour = DateTime.now().hour;
+    final greeting = switch (hour) {
+      >= 5 && < 12 => l10n.goodMorning,
+      >= 12 && < 18 => l10n.goodAfternoon,
+      _ => l10n.goodEvening,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          greeting,
+          style: const TextStyle(
+            fontSize: 15,
+            color: Color(0xFF758372),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          userName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 18,
+            height: 1.1,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF213021),
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TopVitalsRow extends StatelessWidget {
+  const _TopVitalsRow({
+    required this.snapshot,
+    required this.level,
+    required this.isLoading,
+  });
+
+  final BiometricsSnapshot? snapshot;
+  final StateLevel level;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final heartRate = snapshot?.heartRate;
+    final stressValue =
+        snapshot?.isAvailable == true ? snapshot!.stressIndex.clamp(1, 100) : null;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _MiniMetricCard(
+            icon: Icons.favorite_rounded,
+            iconTint: const Color(0xFFB85C6A),
+            iconBg: const Color(0xFFF7E8EB),
+            title: isLoading
+                ? '...'
+                : heartRate != null
+                    ? l10n.bpm(heartRate)
+                    : l10n.noData,
+            subtitle: isLoading ? l10n.heartRateUpdating : l10n.heartRateCurrent,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _MiniMetricCard(
+            icon: Icons.local_florist_rounded,
+            iconTint: level.color,
+            iconBg: level.color.withValues(alpha: 0.14),
+            title: isLoading
+                ? '...'
+                : stressValue != null
+                    ? '$stressValue/100'
+                    : l10n.noData,
+            subtitle: isLoading
+                ? l10n.stressIndexCalculating
+                : l10n.stressIndexLabel,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniMetricCard extends StatelessWidget {
+  const _MiniMetricCard({
+    required this.icon,
+    required this.iconTint,
+    required this.iconBg,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color iconTint;
+  final Color iconBg;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE7ECE3)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD8E1D7).withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: iconTint, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF253126),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.25,
+                    color: Color(0xFF71806F),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AiRecommendationCard extends StatelessWidget {
+  const _AiRecommendationCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(24),
+      child: Ink(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE7ECE3)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD8E1D7).withValues(alpha: 0.14),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F0E6),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFF6D8A6B),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF263126),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.32,
+                          color: Color(0xFF71806F),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Color(0xFF7C8578),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ResumeSessionCard extends StatelessWidget {
+  const _ResumeSessionCard({
+    required this.session,
+    required this.title,
+    required this.sessionMeta,
+    required this.onTap,
+  });
+
+  final SessionRecord session;
+  final String title;
+  final String sessionMeta;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6FAF3),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFDCE8D5)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6EFE0),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.play_circle_fill_rounded,
+                    color: Color(0xFF5E7B58),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF263126),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        sessionMeta,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.3,
+                          color: Color(0xFF71806F),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF7C8578),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OpenModesCard extends StatelessWidget {
+  const _OpenModesCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFFFFF), Color(0xFFF0F1EC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE7ECE3)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 13, 14, 13),
+            child: Row(
+              children: [
+                const _ModesLeadingIcon(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF263126),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.25,
+                          color: Color(0xFF71806F),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF7C8578),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModesLeadingIcon extends StatelessWidget {
+  const _ModesLeadingIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6ECE0),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Icon(
+        Icons.grid_view_rounded,
+        color: Color(0xFF6E836C),
+        size: 20,
+      ),
+    );
+  }
+}

@@ -1,0 +1,218 @@
+// ignore_for_file: prefer_const_literals_to_create_immutables
+
+import 'package:flutter/foundation.dart';
+import 'package:health/health.dart';
+import '../domain/health_state_snapshot.dart';
+
+class BiometricsRepository {
+  final Health _health = Health();
+
+  static const List<HealthDataType> _types = [
+    HealthDataType.HEART_RATE,
+    HealthDataType.STEPS,
+  ];
+
+  static const List<HealthDataAccess> _permissions = [
+    HealthDataAccess.READ,
+    HealthDataAccess.READ,
+  ];
+
+  Future<HealthStateSnapshot> fetchLatestSnapshot() async {
+    debugPrint('BIOMETRICS fetch start');
+    try {
+      final granted = await _health.requestAuthorization(
+        _types,
+        permissions: _permissions,
+      );
+
+      if (!granted) {
+      return HealthStateSnapshot(
+          isAvailable: false,
+          permissionGranted: false,
+          stateScore: 0,
+          stateLabel: 'Нет доступа',
+          summary: 'Доступ к Apple Health не предоставлен.',
+          lastUpdatedAt: null,
+          metrics: const [],
+          availableMetricCount: 0,
+          missingMetricCount: _types.length,
+        );
+      }
+
+      final now = DateTime.now();
+      final from = now.subtract(const Duration(hours: 24));
+
+      final raw = await _health.getHealthDataFromTypes(
+        types: _types,
+        startTime: from,
+        endTime: now,
+      );
+
+      final data = _health.removeDuplicates(raw);
+
+      final heartRateMetric = _buildLatestMetric(
+        data: data,
+        type: HealthDataType.HEART_RATE,
+        typeKey: 'heart_rate',
+        label: 'Пульс',
+        unit: 'bpm',
+      );
+
+      final stepsMetric = _buildAggregatedMetric(
+        data: data,
+        type: HealthDataType.STEPS,
+        typeKey: 'steps_24h',
+        label: 'Шаги за 24ч',
+        unit: 'steps',
+      );
+
+      final metrics = [heartRateMetric, stepsMetric];
+      final availableMetrics = metrics.where((m) => m.hasValue).toList();
+      final lastUpdatedAt = _resolveLastUpdatedAt(metrics);
+
+      final heartRate = heartRateMetric.value;
+      int score = 1;
+      String label = 'Спокойно';
+      String summary = 'Состояние рассчитано по последним данным Apple Health.';
+
+      if (heartRate != null) {
+        if (heartRate >= 115) {
+          score = 4;
+          label = 'Критично';
+          summary = 'Обнаружен очень высокий пульс.';
+        } else if (heartRate >= 95) {
+          score = 3;
+          label = 'Напряжение';
+          summary = 'Обнаружен повышенный пульс.';
+        } else if (heartRate >= 78) {
+          score = 2;
+          label = 'Нагрузка';
+          summary = 'Есть признаки умеренной нагрузки.';
+        }
+      }
+
+      return HealthStateSnapshot(
+        isAvailable: availableMetrics.isNotEmpty,
+        permissionGranted: true,
+        stateScore: score,
+        stateLabel: label,
+        summary: summary,
+        lastUpdatedAt: lastUpdatedAt,
+        metrics: metrics,
+        availableMetricCount: availableMetrics.length,
+        missingMetricCount: metrics.length - availableMetrics.length,
+      );
+    } catch (e) {
+      return HealthStateSnapshot(
+        isAvailable: false,
+        permissionGranted: false,
+        stateScore: 0,
+        stateLabel: 'Ошибка чтения',
+        summary: 'Не удалось получить данные из Apple Health: $e',
+        lastUpdatedAt: null,
+        metrics: const [],
+        availableMetricCount: 0,
+        missingMetricCount: _types.length,
+      );
+    }
+  }
+
+  HealthMetricPoint _buildLatestMetric({
+    required List<HealthDataPoint> data,
+    required HealthDataType type,
+    required String typeKey,
+    required String label,
+    required String unit,
+  }) {
+    final points = data
+        .where((item) => item.type == type)
+        .where((item) => _extractNumericValue(item.value) != null)
+        .toList()
+      ..sort((a, b) => b.dateTo.compareTo(a.dateTo));
+
+    if (points.isEmpty) {
+      return HealthMetricPoint(
+        typeKey: typeKey,
+        label: label,
+        value: null,
+        unit: unit,
+        recordedAt: null,
+        sourceName: null,
+      );
+    }
+
+    final latest = points.first;
+    return HealthMetricPoint(
+      typeKey: typeKey,
+      label: label,
+      value: _extractNumericValue(latest.value),
+      unit: unit,
+      recordedAt: latest.dateTo,
+      sourceName: latest.sourceName,
+    );
+  }
+
+  HealthMetricPoint _buildAggregatedMetric({
+    required List<HealthDataPoint> data,
+    required HealthDataType type,
+    required String typeKey,
+    required String label,
+    required String unit,
+  }) {
+    final points = data
+        .where((item) => item.type == type)
+        .where((item) => _extractNumericValue(item.value) != null)
+        .toList();
+
+    if (points.isEmpty) {
+      return HealthMetricPoint(
+        typeKey: typeKey,
+        label: label,
+        value: null,
+        unit: unit,
+        recordedAt: null,
+        sourceName: null,
+      );
+    }
+
+    final values = points
+        .map((item) => _extractNumericValue(item.value))
+        .whereType<double>()
+        .toList();
+
+    final latestPoint = points.reduce(
+      (a, b) => a.dateTo.isAfter(b.dateTo) ? a : b,
+    );
+
+    return HealthMetricPoint(
+      typeKey: typeKey,
+      label: label,
+      value: values.fold<double>(0.0, (sum, item) => sum + item),
+      unit: unit,
+      recordedAt: latestPoint.dateTo,
+      sourceName: latestPoint.sourceName,
+    );
+  }
+
+  DateTime? _resolveLastUpdatedAt(List<HealthMetricPoint> metrics) {
+    DateTime? result;
+    for (final metric in metrics) {
+      final recordedAt = metric.recordedAt;
+      if (recordedAt == null) continue;
+      if (result == null || recordedAt.isAfter(result)) {
+        result = recordedAt;
+      }
+    }
+    return result;
+  }
+
+  double? _extractNumericValue(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+
+    final raw = value.toString();
+    final match = RegExp(r'(\d+(\.\d+)?)').firstMatch(raw);
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+}

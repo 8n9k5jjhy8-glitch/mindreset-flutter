@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindReset — Email подтверждён</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #F9FCF8 0%, #F3F7F1 50%, #EBF2E9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #243428;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 34px;
+      padding: 40px 32px;
+      max-width: 430px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(216, 228, 213, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      text-align: center;
+    }
+    .flower { font-size: 72px; margin-bottom: 20px; line-height: 1; }
+    h1 {
+      font-size: 26px; font-weight: 700; margin-bottom: 14px;
+      color: #243428; letter-spacing: -0.4px;
+    }
+    p { font-size: 16px; line-height: 1.6; color: #5D7764; margin-bottom: 24px; }
+    .btn {
+      display: inline-block; background: #A6B39F; color: white;
+      font-weight: 600; font-size: 16px; padding: 16px 28px;
+      border-radius: 18px; text-decoration: none;
+    }
+    .hint { margin-top: 18px; font-size: 14px; color: #788578; }
+    .desktop-only, .mobile-only { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="flower">🪷</div>
+    <h1>Спасибо за подтверждение!</h1>
+    <div class="mobile-only">
+      <p>Email успешно подтверждён. Открой приложение MindReset, чтобы продолжить.</p>
+      <a class="btn" href="mindreset://auth/callback?confirmed=true">Открыть MindReset</a>
+      <div class="hint">Если приложение не открылось — запусти его вручную.</div>
+    </div>
+    <div class="desktop-only">
+      <p>Ваша учётная запись активирована.<br />Вернитесь в приложение MindReset.</p>
+      <div class="hint">Это окно можно закрыть.</div>
+    </div>
+  </div>
+  <script>
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    document.querySelector(isMobile ? '.mobile-only' : '.desktop-only').style.display = 'block';
+    if (isMobile) {
+      setTimeout(function () {
+        window.location.href = 'mindreset://auth/callback?confirmed=true';
+      }, 800);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,2302 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/constants/app_colors.dart';
+import '../../profile/data/profile_service.dart';
+import '../../profile/domain/user_context.dart';
+import '../data/repositories/sessions_repository.dart';
+
+class InterventionScreen extends StatefulWidget {
+  const InterventionScreen({
+    super.key,
+    this.arguments = const <String, dynamic>{},
+    this.sessionsRepository,
+    this.userContext,
+  });
+
+  final Map<String, dynamic> arguments;
+  final SessionsRepository? sessionsRepository;
+  final UserContext? userContext;
+
+  @override
+  State<InterventionScreen> createState() => _InterventionScreenState();
+}
+
+class _InterventionScreenState extends State<InterventionScreen> {
+  late final SessionsRepository _sessionsRepository;
+  late final InterventionViewModel vm;
+
+  final ProfileService _profileService = ProfileService();
+
+  bool _isStarting = false;
+  bool _isCompleting = false;
+  bool _isSavingTrustedContact = false;
+  bool _isLoadingTrustedContact = false;
+  bool _isRemovingTrustedContact = false;
+  bool _isCancellingBeforeClose = false;
+
+  bool _sessionStarted = false;
+  bool _sessionCompleted = false;
+  bool _sessionCancelled = false;
+
+  TrustedContactData? _trustedContact;
+
+  final _trustedContactFormKey = GlobalKey<FormState>();
+  final _contactNameController = TextEditingController();
+  final _contactPhoneController = TextEditingController();
+  final _contactNoteController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionsRepository = widget.sessionsRepository ?? SessionsRepository();
+    vm = InterventionViewModel.fromArguments(
+      widget.arguments,
+      userContext: widget.userContext,
+    );
+
+    debugPrint(
+      'INTERVENTION args -> sessionId="${vm.sessionId}", title="${vm.title}", trusted=${vm.isTrustedContact}',
+    );
+
+    final initialStatus =
+        widget.arguments['status']?.toString().trim().toLowerCase();
+    if (initialStatus == 'started' || initialStatus == 'in_progress') {
+      _sessionStarted = true;
+    }
+    if (initialStatus == 'completed') {
+      _sessionStarted = true;
+      _sessionCompleted = true;
+    }
+    if (initialStatus == 'cancelled') {
+      _sessionCancelled = true;
+    }
+
+    if (vm.isTrustedContact) {
+      _loadTrustedContact();
+    }
+  }
+
+  @override
+  void dispose() {
+    _contactNameController.dispose();
+    _contactPhoneController.dispose();
+    _contactNoteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadTrustedContact() async {
+    setState(() => _isLoadingTrustedContact = true);
+
+    try {
+      final trustedContact = await _profileService.fetchTrustedContact();
+      if (!mounted) return;
+
+      setState(() {
+        _trustedContact = trustedContact;
+        if (trustedContact != null) {
+          _contactNameController.text = trustedContact.name;
+          _contactPhoneController.text = trustedContact.phone;
+          _contactNoteController.text = trustedContact.note ?? '';
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load trusted contact: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingTrustedContact = false);
+      }
+    }
+  }
+
+  Future<void> _saveTrustedContact() async {
+    final form = _trustedContactFormKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    setState(() => _isSavingTrustedContact = true);
+
+    try {
+      final trustedContact = await _profileService.saveTrustedContact(
+        name: _contactNameController.text,
+        phone: _contactPhoneController.text,
+        note: _contactNoteController.text,
+      );
+
+      if (!mounted) return;
+
+      setState(() => _trustedContact = trustedContact);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Trusted contact saved'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save trusted contact: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingTrustedContact = false);
+      }
+    }
+  }
+
+  Future<void> _removeTrustedContact() async {
+    setState(() => _isRemovingTrustedContact = true);
+
+    try {
+      await _profileService.clearTrustedContact();
+
+      if (!mounted) return;
+
+      _contactNameController.clear();
+      _contactPhoneController.clear();
+      _contactNoteController.clear();
+
+      setState(() => _trustedContact = null);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Trusted contact removed'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove trusted contact: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isRemovingTrustedContact = false);
+      }
+    }
+  }
+
+  Future<void> _callTrustedContact() async {
+    final trustedContact = _trustedContact;
+    if (trustedContact == null) return;
+
+    final uri = Uri(scheme: 'tel', path: trustedContact.phone.trim());
+
+    await _launchExternalUri(
+      uri,
+      failureMessage: 'Could not start a phone call.',
+    );
+  }
+
+  Future<void> _smsTrustedContact() async {
+    final trustedContact = _trustedContact;
+    if (trustedContact == null) return;
+
+    final cleanedPhone = trustedContact.phone.trim();
+    final body =
+        'Hi ${trustedContact.name}, I may need support right now. Please contact me when you can.';
+    final uri = Uri(
+      scheme: 'sms',
+      path: cleanedPhone,
+      queryParameters: <String, String>{'body': body},
+    );
+
+    await _launchExternalUri(
+      uri,
+      failureMessage: 'Could not open the messaging app.',
+    );
+  }
+
+  Future<void> _launchExternalUri(
+    Uri uri, {
+    required String failureMessage,
+  }) async {
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      if (!canLaunch) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(failureMessage),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(failureMessage),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  bool get _canManageSession =>
+      !vm.isTrustedContact && vm.sessionId.trim().isNotEmpty;
+
+  Future<void> _startSession() async {
+    if (vm.isTrustedContact) {
+      if (_trustedContact != null) {
+        await _callTrustedContact();
+      } else {
+        await _saveTrustedContact();
+      }
+      return;
+    }
+
+    if (!_canManageSession) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Session ID is missing. Please reopen this session.',
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_isStarting || _sessionStarted) return;
+
+    setState(() => _isStarting = true);
+
+    try {
+      await _sessionsRepository.updateSessionStatus(
+        sessionId: vm.sessionId,
+        status: 'started',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _sessionStarted = true;
+        _sessionCompleted = false;
+        _sessionCancelled = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Session started: ${vm.title}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to start session: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isStarting = false);
+      }
+    }
+  }
+
+  Future<void> _completeSession() async {
+    if (vm.isTrustedContact) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+
+    if (!_canManageSession) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Session ID is missing. Please reopen this session.',
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_isCompleting || _sessionCompleted) return;
+
+    setState(() => _isCompleting = true);
+
+    try {
+      await _sessionsRepository.updateSessionStatus(
+        sessionId: vm.sessionId,
+        status: 'completed',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _sessionStarted = true;
+        _sessionCompleted = true;
+        _sessionCancelled = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Session completed: ${vm.title}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.of(context).maybePop(true);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to complete session: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isCompleting = false);
+      }
+    }
+  }
+
+  Future<void> _cancelSessionBeforeClose() async {
+    if (!_canManageSession) return;
+    if (!_sessionStarted || _sessionCompleted || _sessionCancelled) return;
+
+    await _sessionsRepository.updateSessionStatus(
+      sessionId: vm.sessionId,
+      status: 'cancelled',
+    );
+
+    _sessionCancelled = true;
+  }
+
+  Future<void> _handleClose() async {
+    if (vm.isTrustedContact) {
+      if (mounted) {
+        Navigator.of(context).maybePop();
+      }
+      return;
+    }
+
+    if (_isStarting || _isCompleting || _isCancellingBeforeClose) return;
+
+    setState(() => _isCancellingBeforeClose = true);
+
+    try {
+      await _cancelSessionBeforeClose();
+
+      if (!mounted) return;
+      Navigator.of(context).maybePop();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to close session safely: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isCancellingBeforeClose = false);
+      }
+    }
+  }
+
+  void _showFormatInfo(SupportFormat format) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textSecondary.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 20),
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: format.color.withValues(alpha: 0.12),
+                child: Icon(format.icon, color: format.color),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                format.label,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                format.description,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String get _primaryActionTitle {
+    if (_sessionCompleted) {
+      return 'Session completed';
+    }
+    if (_sessionStarted) {
+      return 'Session in progress';
+    }
+    return vm.step.primaryTitle;
+  }
+
+  String get _primaryActionDescription {
+    if (_sessionCompleted) {
+      return 'This session is already marked as completed.';
+    }
+    if (_sessionStarted) {
+      return 'The session is already running. You can continue the practice or mark it as completed below.';
+    }
+    return vm.step.primaryDescription;
+  }
+
+  String get _primaryActionButtonText {
+    if (_sessionCompleted) {
+      return 'Completed';
+    }
+    if (_sessionStarted) {
+      return 'Already started';
+    }
+    return vm.step.primaryButtonLabel;
+  }
+
+  IconData get _primaryActionButtonIcon {
+    if (_sessionCompleted) {
+      return Icons.check_circle_rounded;
+    }
+    if (_sessionStarted) {
+      return Icons.play_circle_fill_rounded;
+    }
+    return vm.step.primaryButtonIcon;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final formats = vm.supportFormats;
+    final step = vm.step;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon:
+              _isCancellingBeforeClose
+                  ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                  : const Icon(Icons.arrow_back_ios_new_rounded),
+          color: AppColors.textPrimary,
+          onPressed: _isCancellingBeforeClose ? null : _handleClose,
+        ),
+        title: Text(
+          vm.title,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          children: [
+            _HeroCard(vm: vm),
+            const SizedBox(height: 16),
+            _CurrentFocusCard(vm: vm),
+            const SizedBox(height: 16),
+            _SessionMetaCard(vm: vm),
+            const SizedBox(height: 16),
+            _StepTimelineCard(step: step),
+            const SizedBox(height: 16),
+            _SupportFormatsCard(formats: formats, onTapFormat: _showFormatInfo),
+            const SizedBox(height: 16),
+            if (vm.isTrustedContact)
+              _TrustedContactCard(
+                formKey: _trustedContactFormKey,
+                contactNameController: _contactNameController,
+                contactPhoneController: _contactPhoneController,
+                contactNoteController: _contactNoteController,
+                trustedContact: _trustedContact,
+                isLoading: _isLoadingTrustedContact,
+                isSaving: _isSavingTrustedContact,
+                isRemoving: _isRemovingTrustedContact,
+                onSave: _saveTrustedContact,
+                onCall: _callTrustedContact,
+                onSms: _smsTrustedContact,
+                onRemove: _removeTrustedContact,
+              )
+            else
+              _PrimaryActionCard(
+                title: _primaryActionTitle,
+                description: _primaryActionDescription,
+                buttonText: _primaryActionButtonText,
+                buttonIcon: _primaryActionButtonIcon,
+                isLoading: _isStarting,
+                isDisabled: _sessionStarted || _sessionCompleted,
+                onPressed: _startSession,
+              ),
+            const SizedBox(height: 16),
+            _ActionButtonsBlock(
+              isCompleting: _isCompleting,
+              isClosing: _isCancellingBeforeClose,
+              onComplete: _completeSession,
+              onClose: _handleClose,
+              isTrustedContact: vm.isTrustedContact,
+              isSessionStarted: _sessionStarted,
+              isSessionCompleted: _sessionCompleted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class InterventionViewModel {
+  const InterventionViewModel({
+    required this.sessionId,
+    required this.title,
+    required this.subtitle,
+    required this.sessionType,
+    required this.durationMinutes,
+    required this.accentColor,
+    required this.icon,
+    required this.step,
+    required this.supportFormats,
+    required this.personalGreeting,
+    required this.focusText,
+    required this.summaryText,
+    required this.isTrustedContact,
+  });
+
+  final String sessionId;
+  final String title;
+  final String subtitle;
+  final String sessionType;
+  final int durationMinutes;
+  final Color accentColor;
+  final IconData icon;
+  final InterventionStep step;
+  final List<SupportFormat> supportFormats;
+  final String personalGreeting;
+  final String focusText;
+  final String summaryText;
+  final bool isTrustedContact;
+
+  factory InterventionViewModel.fromArguments(
+    Map<String, dynamic> args, {
+    UserContext? userContext,
+  }) {
+    final rawTitle =
+        (args['title'] ?? args['sessionTitle'] ?? 'Intervention').toString();
+    final rawType =
+        (args['type'] ?? args['sessionType'] ?? 'guided').toString();
+    final rawSessionId =
+        (args['sessionId'] ?? args['id'] ?? '').toString().trim();
+
+    final duration =
+        _readInt(
+          args['durationMinutes'] ?? args['duration'] ?? args['minutes'],
+        ) ??
+        10;
+
+    final name = _extractName(userContext);
+    final normalizedType = rawType.trim().toLowerCase();
+    final isTrustedContact = normalizedType == 'trusted_contact';
+
+    final title = _resolveTitle(rawTitle, normalizedType);
+    final sessionType = normalizedType.isEmpty ? 'guided' : normalizedType;
+    final step = _resolveStep(normalizedType, args);
+
+    final accentColor = _resolveAccentColor(sessionType, step);
+    final icon = _resolveIcon(sessionType, step);
+    final subtitle = _buildSubtitle(sessionType, duration, step);
+    final focusText = _buildFocusText(sessionType, step, userContext);
+    final summaryText = _buildSummaryText(sessionType, duration, step);
+    final supportFormats = _buildSupportFormats(sessionType, step);
+
+    return InterventionViewModel(
+      sessionId: rawSessionId,
+      title: title,
+      subtitle: subtitle,
+      sessionType: sessionType,
+      durationMinutes: duration,
+      accentColor: accentColor,
+      icon: icon,
+      step: step,
+      supportFormats: supportFormats,
+      personalGreeting:
+          name != null && name.isNotEmpty ? 'Hi, $name' : 'Welcome back',
+      focusText: focusText,
+      summaryText: summaryText,
+      isTrustedContact: isTrustedContact,
+    );
+  }
+
+  static int? _readInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value == null) return null;
+    return int.tryParse(value.toString());
+  }
+
+  static String? _extractName(UserContext? userContext) {
+    if (userContext == null) return null;
+
+    final dynamic ctx = userContext;
+
+    try {
+      final name = ctx.name;
+      if (name is String && name.trim().isNotEmpty) {
+        return name.trim();
+      }
+    } catch (_) {}
+
+    try {
+      final firstName = ctx.firstName;
+      if (firstName is String && firstName.trim().isNotEmpty) {
+        return firstName.trim();
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
+  static String _resolveTitle(String rawTitle, String sessionType) {
+    if (rawTitle.trim().isNotEmpty && rawTitle.trim() != 'Intervention') {
+      return rawTitle.trim();
+    }
+
+    switch (sessionType) {
+      case 'calm':
+        return 'Calm mode';
+      case 'energy':
+        return 'Energy reset';
+      case 'sleep':
+        return 'Sleep preparation';
+      case 'focus':
+        return 'Focus mode';
+      case 'visual_contact':
+        return 'Visual Contact';
+      case 'trusted_contact':
+        return 'Trusted contact';
+      default:
+        return 'Intervention';
+    }
+  }
+
+  static InterventionStep _resolveStep(
+    String sessionType,
+    Map<String, dynamic> args,
+  ) {
+    final rawStep = (args['step'] ?? args['sessionStep'])?.toString();
+
+    if (rawStep != null && rawStep.trim().isNotEmpty) {
+      return InterventionStep.fromRaw(rawStep);
+    }
+
+    switch (sessionType) {
+      case 'calm':
+      case 'visual_contact':
+      case 'trusted_contact':
+        return InterventionStep.ground;
+      case 'energy':
+        return InterventionStep.restore;
+      case 'sleep':
+        return InterventionStep.regulate;
+      case 'focus':
+        return InterventionStep.reflect;
+      default:
+        return InterventionStep.ground;
+    }
+  }
+
+  static Color _resolveAccentColor(String sessionType, InterventionStep step) {
+    final normalized = sessionType.toLowerCase();
+
+    if (normalized.contains('trusted_contact')) return const Color(0xFFA17456);
+    if (normalized.contains('visual_contact')) return const Color(0xFF7B69A7);
+    if (normalized.contains('breath')) return const Color(0xFF4AA3FF);
+    if (normalized.contains('sleep')) return const Color(0xFF7B61FF);
+    if (normalized.contains('focus')) return const Color(0xFF00A896);
+    if (normalized.contains('calm')) return const Color(0xFF3AAFA9);
+    if (normalized.contains('energy')) return const Color(0xFFE9A23B);
+    if (normalized.contains('ground')) return const Color(0xFFF4A261);
+
+    switch (step) {
+      case InterventionStep.ground:
+        return const Color(0xFFF4A261);
+      case InterventionStep.regulate:
+        return const Color(0xFF4AA3FF);
+      case InterventionStep.reflect:
+        return const Color(0xFF7B61FF);
+      case InterventionStep.restore:
+        return const Color(0xFF00A896);
+    }
+  }
+
+  static IconData _resolveIcon(String sessionType, InterventionStep step) {
+    final normalized = sessionType.toLowerCase();
+
+    if (normalized.contains('trusted_contact')) {
+      return Icons.phone_in_talk_rounded;
+    }
+    if (normalized.contains('visual_contact')) return Icons.videocam_rounded;
+    if (normalized.contains('breath')) return Icons.air_rounded;
+    if (normalized.contains('sleep')) return Icons.nightlight_round;
+    if (normalized.contains('focus')) {
+      return Icons.center_focus_strong_rounded;
+    }
+    if (normalized.contains('calm')) return Icons.spa_rounded;
+    if (normalized.contains('energy')) return Icons.wb_sunny_rounded;
+    if (normalized.contains('ground')) return Icons.self_improvement_rounded;
+
+    switch (step) {
+      case InterventionStep.ground:
+        return Icons.self_improvement_rounded;
+      case InterventionStep.regulate:
+        return Icons.favorite_rounded;
+      case InterventionStep.reflect:
+        return Icons.psychology_rounded;
+      case InterventionStep.restore:
+        return Icons.wb_sunny_rounded;
+    }
+  }
+
+  static String _buildSubtitle(
+    String sessionType,
+    int duration,
+    InterventionStep step,
+  ) {
+    if (sessionType == 'trusted_contact') {
+      return 'Trusted contact • quick access • ${step.label}';
+    }
+
+    final prettyType = _titleCase(sessionType.replaceAll('_', ' '));
+    return '$prettyType • $duration min • ${step.label}';
+  }
+
+  static String _buildFocusText(
+    String sessionType,
+    InterventionStep step,
+    UserContext? userContext,
+  ) {
+    if (sessionType == 'trusted_contact') {
+      return 'Reach a trusted person quickly when you need support, grounding, or immediate human connection.';
+    }
+
+    if (sessionType == 'visual_contact') {
+      return 'Use visual presence and steady prompts to reduce isolation and restore orientation.';
+    }
+
+    const baseByStep = {
+      InterventionStep.ground:
+          'Slow down, orient yourself, and reconnect with the present moment.',
+      InterventionStep.regulate:
+          'Reduce inner pressure and help your body settle into a safer rhythm.',
+      InterventionStep.reflect:
+          'Notice what is happening inside without judgment and with more clarity.',
+      InterventionStep.restore:
+          'Build energy, steadiness, and a sense of forward movement.',
+    };
+
+    String text = baseByStep[step]!;
+
+    if (userContext != null) {
+      final dynamic ctx = userContext;
+
+      try {
+        final goals = ctx.goals;
+        if (goals is String && goals.trim().isNotEmpty) {
+          text = '$text Goal in focus: ${goals.trim()}.';
+        }
+      } catch (_) {}
+    }
+
+    return text;
+  }
+
+  static String _buildSummaryText(
+    String sessionType,
+    int duration,
+    InterventionStep step,
+  ) {
+    if (sessionType == 'trusted_contact') {
+      return 'Quick access to a trusted person when human support matters more than a guided session.';
+    }
+
+    if (sessionType == 'visual_contact') {
+      return 'Visual Contact session for about $duration minutes, designed to support stability and orientation.';
+    }
+
+    final type = _titleCase(sessionType.replaceAll('_', ' '));
+    return '$type session for about $duration minutes, designed to support ${step.summaryKeyword}.';
+  }
+
+  static List<SupportFormat> _buildSupportFormats(
+    String sessionType,
+    InterventionStep step,
+  ) {
+    if (sessionType == 'trusted_contact') {
+      return const [
+        SupportFormat(
+          kind: SupportFormatKind.contact,
+          label: 'Trusted contact',
+          description:
+              'A quick route to a person you already trust and want to reach in difficult moments.',
+          icon: Icons.phone_in_talk_rounded,
+          color: Color(0xFFA17456),
+        ),
+        SupportFormat(
+          kind: SupportFormatKind.text,
+          label: 'Preparation prompt',
+          description:
+              'A short prompt can help you decide what to say before calling or messaging.',
+          icon: Icons.short_text_rounded,
+          color: Color(0xFF00A896),
+        ),
+        SupportFormat(
+          kind: SupportFormatKind.note,
+          label: 'Saved in profile',
+          description:
+              'This trusted contact is stored in your profile, so it can be available across devices.',
+          icon: Icons.verified_user_rounded,
+          color: Color(0xFF7B61FF),
+        ),
+      ];
+    }
+
+    if (sessionType == 'visual_contact') {
+      return const [
+        SupportFormat(
+          kind: SupportFormatKind.visual,
+          label: 'Visual cues',
+          description:
+              'Animated pacing, soft prompts, and clear focus points support breathing and attention.',
+          icon: Icons.visibility_rounded,
+          color: Color(0xFF7B61FF),
+        ),
+        SupportFormat(
+          kind: SupportFormatKind.audio,
+          label: 'Audio guidance',
+          description:
+              'A calm voice leads the session step by step, so the user can stay engaged without reading.',
+          icon: Icons.graphic_eq_rounded,
+          color: Color(0xFF4AA3FF),
+        ),
+        SupportFormat(
+          kind: SupportFormatKind.text,
+          label: 'Text prompts',
+          description:
+              'Short written prompts keep the interaction simple and reduce cognitive overload.',
+          icon: Icons.short_text_rounded,
+          color: Color(0xFF00A896),
+        ),
+      ];
+    }
+
+    const formats = <SupportFormat>[
+      SupportFormat(
+        kind: SupportFormatKind.audio,
+        label: 'Audio guidance',
+        description:
+            'A calm voice leads the session step by step, so the user can stay engaged without reading.',
+        icon: Icons.graphic_eq_rounded,
+        color: Color(0xFF4AA3FF),
+      ),
+      SupportFormat(
+        kind: SupportFormatKind.visual,
+        label: 'Visual cues',
+        description:
+            'Animated pacing, soft prompts, and clear focus points support breathing and attention.',
+        icon: Icons.visibility_rounded,
+        color: Color(0xFF7B61FF),
+      ),
+      SupportFormat(
+        kind: SupportFormatKind.text,
+        label: 'Text prompts',
+        description:
+            'Short written instructions make the flow simple and reduce cognitive overload.',
+        icon: Icons.short_text_rounded,
+        color: Color(0xFF00A896),
+      ),
+    ];
+
+    if (sessionType.toLowerCase().contains('breath')) {
+      return [
+        formats[0],
+        formats[1],
+        const SupportFormat(
+          kind: SupportFormatKind.haptic,
+          label: 'Rhythm support',
+          description:
+              'Steady timing cues can reinforce inhale and exhale pacing during breathwork.',
+          icon: Icons.vibration_rounded,
+          color: Color(0xFFF4A261),
+        ),
+      ];
+    }
+
+    if (step == InterventionStep.reflect) {
+      return [
+        formats[2],
+        const SupportFormat(
+          kind: SupportFormatKind.journal,
+          label: 'Reflection notes',
+          description:
+              'A brief journaling moment helps translate emotion into language and insight.',
+          icon: Icons.edit_note_rounded,
+          color: Color(0xFFB07CFB),
+        ),
+        formats[1],
+      ];
+    }
+
+    return formats;
+  }
+
+  static String _titleCase(String input) {
+    return input
+        .split(' ')
+        .where((e) => e.trim().isNotEmpty)
+        .map(
+          (word) =>
+              '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+}
+
+enum InterventionStep {
+  ground(
+    label: 'Ground',
+    summaryKeyword: 'stability and orientation',
+    primaryTitle: 'Start grounding',
+    primaryDescription:
+        'Use a short, structured sequence to settle attention and reduce inner noise.',
+    primaryButtonLabel: 'Start session',
+    primaryButtonIcon: Icons.play_arrow_rounded,
+  ),
+  regulate(
+    label: 'Regulate',
+    summaryKeyword: 'calm and regulation',
+    primaryTitle: 'Begin regulation',
+    primaryDescription:
+        'Move into a guided pace that supports breathing, nervous system regulation, and relief.',
+    primaryButtonLabel: 'Begin now',
+    primaryButtonIcon: Icons.favorite_rounded,
+  ),
+  reflect(
+    label: 'Reflect',
+    summaryKeyword: 'clarity and emotional awareness',
+    primaryTitle: 'Open reflection',
+    primaryDescription:
+        'Create a little space to notice what you feel, what matters, and what needs care.',
+    primaryButtonLabel: 'Open reflection',
+    primaryButtonIcon: Icons.psychology_rounded,
+  ),
+  restore(
+    label: 'Restore',
+    summaryKeyword: 'recovery and energy',
+    primaryTitle: 'Start restore flow',
+    primaryDescription:
+        'Use a supportive sequence to recover steadiness, energy, and a sense of direction.',
+    primaryButtonLabel: 'Start restore',
+    primaryButtonIcon: Icons.wb_sunny_rounded,
+  );
+
+  const InterventionStep({
+    required this.label,
+    required this.summaryKeyword,
+    required this.primaryTitle,
+    required this.primaryDescription,
+    required this.primaryButtonLabel,
+    required this.primaryButtonIcon,
+  });
+
+  final String label;
+  final String summaryKeyword;
+  final String primaryTitle;
+  final String primaryDescription;
+  final String primaryButtonLabel;
+  final IconData primaryButtonIcon;
+
+  static InterventionStep fromRaw(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case 'ground':
+      case 'grounding':
+        return InterventionStep.ground;
+      case 'regulate':
+      case 'regulation':
+        return InterventionStep.regulate;
+      case 'reflect':
+      case 'reflection':
+        return InterventionStep.reflect;
+      case 'restore':
+      case 'recovery':
+        return InterventionStep.restore;
+      default:
+        return InterventionStep.ground;
+    }
+  }
+}
+
+enum SupportFormatKind { audio, visual, text, haptic, journal, contact, note }
+
+class SupportFormat {
+  const SupportFormat({
+    required this.kind,
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
+
+  final SupportFormatKind kind;
+  final String label;
+  final String description;
+  final IconData icon;
+  final Color color;
+}
+
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({required this.vm});
+
+  final InterventionViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [vm.accentColor, vm.accentColor.withValues(alpha: 0.78)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: vm.accentColor.withValues(alpha: 0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white.withValues(alpha: 0.18),
+                child: Icon(vm.icon, color: Colors.white, size: 24),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  vm.step.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            vm.personalGreeting,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            vm.title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            vm.subtitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    vm.summaryText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CurrentFocusCard extends StatelessWidget {
+  const _CurrentFocusCard({required this.vm});
+
+  final InterventionViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(
+            icon: Icons.adjust_rounded,
+            text: 'Current focus',
+          ),
+          const SizedBox(height: 12),
+          Text(
+            vm.focusText,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              height: 1.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SessionMetaCard extends StatelessWidget {
+  const _SessionMetaCard({required this.vm});
+
+  final InterventionViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          Expanded(
+            child: _MetaItem(
+              icon: Icons.schedule_rounded,
+              label: 'Duration',
+              value:
+                  vm.sessionType == 'trusted_contact'
+                      ? 'Quick access'
+                      : '${vm.durationMinutes} min',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _MetaItem(
+              icon: Icons.category_rounded,
+              label: 'Type',
+              value: vm.sessionType.replaceAll('_', ' '),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaItem extends StatelessWidget {
+  const _MetaItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primary, size: 20),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepTimelineCard extends StatelessWidget {
+  const _StepTimelineCard({required this.step});
+
+  final InterventionStep step;
+
+  @override
+  Widget build(BuildContext context) {
+    const allSteps = InterventionStep.values;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(icon: Icons.route_rounded, text: 'Session flow'),
+          const SizedBox(height: 14),
+          ...List.generate(allSteps.length, (index) {
+            final item = allSteps[index];
+            final isActive = item == step;
+            final isLast = index == allSteps.length - 1;
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color:
+                            isActive
+                                ? AppColors.primary
+                                : AppColors.textSecondary.withValues(
+                                  alpha: 0.25,
+                                ),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    if (!isLast)
+                      Container(
+                        width: 2,
+                        height: 34,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        color: AppColors.textSecondary.withValues(alpha: 0.16),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            color:
+                                isActive
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                            fontSize: 15,
+                            fontWeight:
+                                isActive ? FontWeight.w800 : FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.primaryDescription,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _SupportFormatsCard extends StatelessWidget {
+  const _SupportFormatsCard({required this.formats, required this.onTapFormat});
+
+  final List<SupportFormat> formats;
+  final ValueChanged<SupportFormat> onTapFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(
+            icon: Icons.widgets_rounded,
+            text: 'Support formats',
+          ),
+          const SizedBox(height: 14),
+          ...formats.map(
+            (format) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => onTapFormat(format),
+                child: Ink(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: format.color.withValues(alpha: 0.12),
+                        child: Icon(format.icon, color: format.color, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              format.label,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              format.description,
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 13,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrustedContactCard extends StatelessWidget {
+  const _TrustedContactCard({
+    required this.formKey,
+    required this.contactNameController,
+    required this.contactPhoneController,
+    required this.contactNoteController,
+    required this.trustedContact,
+    required this.isLoading,
+    required this.isSaving,
+    required this.isRemoving,
+    required this.onSave,
+    required this.onCall,
+    required this.onSms,
+    required this.onRemove,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final TextEditingController contactNameController;
+  final TextEditingController contactPhoneController;
+  final TextEditingController contactNoteController;
+  final TrustedContactData? trustedContact;
+  final bool isLoading;
+  final bool isSaving;
+  final bool isRemoving;
+  final VoidCallback onSave;
+  final VoidCallback onCall;
+  final VoidCallback onSms;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    if (trustedContact != null) {
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionLabel(
+              icon: Icons.contact_phone_rounded,
+              text: 'Trusted contact',
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    trustedContact!.name,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    trustedContact!.phone,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                  if ((trustedContact!.note ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      trustedContact!.note!,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onCall,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(52),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    icon: const Icon(Icons.call_rounded),
+                    label: const Text(
+                      'Call',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onSms,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    icon: const Icon(Icons.sms_rounded),
+                    label: const Text(
+                      'SMS',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: isRemoving ? null : onRemove,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon:
+                    isRemoving
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                        : const Icon(Icons.delete_outline_rounded),
+                label: Text(
+                  isRemoving ? 'Removing...' : 'Remove trusted contact',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Form(
+        key: formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionLabel(
+              icon: Icons.person_add_alt_1_rounded,
+              text: 'Set up trusted contact',
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Add one trusted person for quick access in difficult moments.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: contactNameController,
+              textInputAction: TextInputAction.next,
+              decoration: _inputDecoration('Contact name'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Enter contact name';
+                }
+                if (value.trim().length < 2) {
+                  return 'Name is too short';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: contactPhoneController,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              decoration: _inputDecoration('Phone number'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Enter phone number';
+                }
+
+                final normalized = value.replaceAll(RegExp(r'[^0-9+]'), '');
+                if (normalized.length < 7) {
+                  return 'Phone number is too short';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: contactNoteController,
+              minLines: 2,
+              maxLines: 3,
+              decoration: _inputDecoration('Optional note'),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isSaving ? null : onSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(54),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                icon:
+                    isSaving
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Icon(Icons.save_rounded),
+                label: Text(
+                  isSaving ? 'Saving...' : 'Save trusted contact',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: AppColors.background,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+    );
+  }
+}
+
+class _PrimaryActionCard extends StatelessWidget {
+  const _PrimaryActionCard({
+    required this.title,
+    required this.description,
+    required this.buttonText,
+    required this.buttonIcon,
+    required this.onPressed,
+    required this.isLoading,
+    required this.isDisabled,
+  });
+
+  final String title;
+  final String description;
+  final String buttonText;
+  final IconData buttonIcon;
+  final VoidCallback onPressed;
+  final bool isLoading;
+  final bool isDisabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel(
+            icon: Icons.play_circle_fill_rounded,
+            text: 'Primary action',
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: isLoading || isDisabled ? null : onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(54),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              icon:
+                  isLoading
+                      ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Icon(buttonIcon),
+              label: Text(
+                isLoading ? 'Starting...' : buttonText,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionButtonsBlock extends StatelessWidget {
+  const _ActionButtonsBlock({
+    required this.isCompleting,
+    required this.isClosing,
+    required this.onComplete,
+    required this.onClose,
+    required this.isTrustedContact,
+    required this.isSessionStarted,
+    required this.isSessionCompleted,
+  });
+
+  final bool isCompleting;
+  final bool isClosing;
+  final VoidCallback onComplete;
+  final VoidCallback onClose;
+  final bool isTrustedContact;
+  final bool isSessionStarted;
+  final bool isSessionCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final completeEnabled =
+        isTrustedContact || (isSessionStarted && !isSessionCompleted);
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed:
+                isCompleting || isClosing || !completeEnabled
+                    ? null
+                    : onComplete,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+              side: BorderSide(
+                color: AppColors.primary.withValues(alpha: 0.22),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            icon:
+                isCompleting
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                    : Icon(
+                      isTrustedContact
+                          ? Icons.arrow_back_rounded
+                          : Icons.check_circle_rounded,
+                    ),
+            label: Text(
+              isCompleting
+                  ? 'Completing...'
+                  : isTrustedContact
+                  ? 'Back'
+                  : isSessionCompleted
+                  ? 'Completed'
+                  : 'Mark as completed',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton(
+            onPressed: isClosing || isCompleting ? null : onClose,
+            style: TextButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: Text(
+              isClosing ? 'Closing...' : 'Close',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primary, size: 18),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> showSessionResultSheet(
+  BuildContext context, {
+  required String sessionId,
+  required SessionsRepository repository,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder:
+        (_) =>
+            _SessionResultSheet(sessionId: sessionId, repository: repository),
+  );
+}
+
+class _SessionResultSheet extends StatefulWidget {
+  const _SessionResultSheet({
+    required this.sessionId,
+    required this.repository,
+  });
+
+  final String sessionId;
+  final SessionsRepository repository;
+
+  @override
+  State<_SessionResultSheet> createState() => _SessionResultSheetState();
+}
+
+class _SessionResultSheetState extends State<_SessionResultSheet> {
+  final TextEditingController _noteController = TextEditingController();
+
+  String? _selected;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_selected == null) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      await widget.repository.saveSessionResult(
+        sessionId: widget.sessionId,
+        resultRating: _selected!,
+        resultNote: _noteController.text,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save session result: $e'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 5,
+            decoration: BoxDecoration(
+              color: AppColors.textSecondary.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Did this session help?',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Save a short result so history can show not only completion, but also real benefit.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _ResultOptionTile(
+                  title: 'Yes, it helped',
+                  isSelected: _selected == 'helped',
+                  onTap: () => setState(() => _selected = 'helped'),
+                ),
+                const SizedBox(height: 10),
+                _ResultOptionTile(
+                  title: 'Neutral',
+                  isSelected: _selected == 'neutral',
+                  onTap: () => setState(() => _selected = 'neutral'),
+                ),
+                const SizedBox(height: 10),
+                _ResultOptionTile(
+                  title: 'No, it did not help',
+                  isSelected: _selected == 'not_helped',
+                  onTap: () => setState(() => _selected = 'not_helped'),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _noteController,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: 'Optional short note',
+                    filled: true,
+                    fillColor: AppColors.background,
+                    contentPadding: const EdgeInsets.all(14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSaving || _selected == null ? null : _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(54),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: Text(
+                      _isSaving ? 'Saving...' : 'Save result',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultOptionTile extends StatelessWidget {
+  const _ResultOptionTile({
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? AppColors.primary.withValues(alpha: 0.10)
+                  : AppColors.background,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color:
+                isSelected
+                    ? AppColors.primary.withValues(alpha: 0.35)
+                    : AppColors.textSecondary.withValues(alpha: 0.12),
+          ),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: isSelected ? AppColors.primary : AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
