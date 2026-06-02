@@ -339,5 +339,27 @@
   "personalDetailsSleepProblemEarlyWaking": "Ранние пробуждения",
   "personalDetailsSleepProblemLightSleep": "Поверхностный сон",
   "personalDetailsSleepProblemRacingThoughts": "Навязчивые мысли",
-  "personalDetailsSleepProblemIrregularSchedule": "Нерегулярный график"
+  "personalDetailsSleepProblemIrregularSchedule": "Нерегулярный график",
+  "modesTitle": "Режимы",
+  "modesTopCardTitle": "Что чаще помогает именно тебе",
+  "modesTopCardSubtitle": "По текущей истории чаще всего до завершения доходит режим: Режим спокойствия.",
+  "modesManualSelectionStressTitle": "Ручной выбор режима",
+  "modesCreateSessionError": "Не удалось создать сессию. Попробуй ещё раз.",
+  "modesOpenError": "Не удалось открыть режим: {error}",
+  "@modesOpenError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "modeCalmTitle": "Режим спокойствия",
+  "modeEnergyTitle": "Нужна энергия",
+  "modeSleepTitle": "Подготовка ко сну",
+  "modeFocusTitle": "Хочу сфокусироваться",
+  "modeVisualContactTitle": "Визуальный контакт с AI",
+  "modeVisualContactSubtitle": "Открой разговор с AI-человеком в формате визуального контакта.",
+  "modeTrustedContactTitle": "Связь с близким человеком",
+  "modeTrustedContactSubtitle": "При необходимости можно быстро выйти на связь с доверенным человеком.",
+  "myStateNowTitle": "МОЁ СОСТОЯНИЕ СЕЙЧАС",
+  "stateUpdatesFromBiometrics": "Состояние обновляется автоматически на основе биометрии.",
+  "professionProfileHelper": "Выбери свой контекст жизни, чтобы рекомендации были точнее и полезнее."
 }

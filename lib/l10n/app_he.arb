@@ -339,5 +339,27 @@
   "personalDetailsSleepProblemEarlyWaking": "יקיצה מוקדמת",
   "personalDetailsSleepProblemLightSleep": "שינה קלה",
   "personalDetailsSleepProblemRacingThoughts": "מחשבות רצות",
-  "personalDetailsSleepProblemIrregularSchedule": "לו\"ז לא סדיר"
+  "personalDetailsSleepProblemIrregularSchedule": "לו\"ז לא סדיר",
+  "modesTitle": "מצבים",
+  "modesTopCardTitle": "מה עוזר לך לרוב",
+  "modesTopCardSubtitle": "לפי ההיסטוריה הנוכחית שלך, המצב שמגיע לסיום בתדירות הגבוהה ביותר הוא: מצב רוגע.",
+  "modesManualSelectionStressTitle": "בחירה ידנית של מצב",
+  "modesCreateSessionError": "לא ניתן היה ליצור סשן. נסה שוב.",
+  "modesOpenError": "לא ניתן היה לפתוח את המצב: {error}",
+  "@modesOpenError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "modeCalmTitle": "מצב רוגע",
+  "modeEnergyTitle": "צריך אנרגיה",
+  "modeSleepTitle": "הכנה לשינה",
+  "modeFocusTitle": "אני רוצה להתמקד",
+  "modeVisualContactTitle": "קשר חזותי עם AI",
+  "modeVisualContactSubtitle": "פתח שיחה עם אדם מבוסס AI בפורמט של קשר חזותי.",
+  "modeTrustedContactTitle": "קשר עם אדם קרוב",
+  "modeTrustedContactSubtitle": "במידת הצורך אפשר ליצור במהירות קשר עם אדם מהימן.",
+  "myStateNowTitle": "המצב שלי עכשיו",
+  "stateUpdatesFromBiometrics": "המצב מתעדכן אוטומטית על סמך נתוני ביומטריה.",
+  "professionProfileHelper": "בחר את הקשר החיים שלך כדי שההמלצות יהיו מדויקות ומועילות יותר."
 }

@@ -61,9 +61,9 @@ class StateHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'МОЁ СОСТОЯНИЕ СЕЙЧАС',
-                  style: TextStyle(
+                Text(
+                  l10n.myStateNowTitle,
+                  style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textMuted,
                     fontWeight: FontWeight.w700,
@@ -123,7 +123,7 @@ class StateHero extends StatelessWidget {
                 Text(
                   isRefreshing
                       ? 'Обновляем данные из Apple Health...'
-                      : 'Состояние обновляется автоматически на основе биометрии.',
+                      : l10n.stateUpdatesFromBiometrics,
                   style: const TextStyle(
                     fontSize: 11,
                     height: 1.25,

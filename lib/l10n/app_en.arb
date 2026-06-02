@@ -339,5 +339,27 @@
   "personalDetailsSleepProblemEarlyWaking": "Early waking",
   "personalDetailsSleepProblemLightSleep": "Light sleep",
   "personalDetailsSleepProblemRacingThoughts": "Racing thoughts",
-  "personalDetailsSleepProblemIrregularSchedule": "Irregular schedule"
+  "personalDetailsSleepProblemIrregularSchedule": "Irregular schedule",
+  "modesTitle": "Modes",
+  "modesTopCardTitle": "What helps you most often",
+  "modesTopCardSubtitle": "Based on your current history, the mode most often completed is: Calm mode.",
+  "modesManualSelectionStressTitle": "Manual mode selection",
+  "modesCreateSessionError": "Could not create session. Please try again.",
+  "modesOpenError": "Could not open mode: {error}",
+  "@modesOpenError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "modeCalmTitle": "Calm mode",
+  "modeEnergyTitle": "Need energy",
+  "modeSleepTitle": "Sleep preparation",
+  "modeFocusTitle": "I want to focus",
+  "modeVisualContactTitle": "Visual contact with AI",
+  "modeVisualContactSubtitle": "Start a conversation with an AI human in a visual contact format.",
+  "modeTrustedContactTitle": "Contact a trusted person",
+  "modeTrustedContactSubtitle": "If needed, you can quickly reach a trusted person.",
+  "myStateNowTitle": "My state right now",
+  "stateUpdatesFromBiometrics": "Your state is updated automatically based on biometrics.",
+  "professionProfileHelper": "Choose your life context so recommendations are more accurate and useful."
 }

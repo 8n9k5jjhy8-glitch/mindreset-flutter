@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _openIntervention({required String source}) async {
     final l10n = AppLocalizations.of(context)!;
-    final resolvedModeTitle = _buildPersonalizedModeTitle();
+    final resolvedModeTitle = _buildPersonalizedModeTitle(l10n);
     final resolvedModeKey = _modeKeyFromTitle(resolvedModeTitle);
 
     final sessionId = await _sessionsRepository.createSession(
@@ -182,6 +182,7 @@ class _HomeScreenState extends State<HomeScreen>
       modeTitle: resolvedModeTitle,
       stressLevel: _currentLevel.number,
       stressTitle: _currentLevel.title(l10n),
+
       source: source,
     );
 
@@ -200,6 +201,7 @@ class _HomeScreenState extends State<HomeScreen>
         'source': source,
         'stressLevel': _currentLevel.number,
         'stressTitle': _currentLevel.title(l10n),
+
         'status': 'started',
       },
     );
@@ -381,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen>
     return l10n.aiPersonalRecommendation(duration, tone);
   }
 
-  String _buildPersonalizedModeTitle() {
+  String _buildPersonalizedModeTitle(AppLocalizations l10n) {
   final l10n = AppLocalizations.of(context)!;
   return l10n.appTitle;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
 
 import '../../../../core/constants/app_colors.dart';
 
@@ -17,11 +18,12 @@ class ModesGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const modes = [
-      ModeData('Режим спокойствия', '🪷', AppColors.modeCalm),
-      ModeData('Нужна энергия', '☀️', AppColors.modeEnergy),
-      ModeData('Подготовка ко сну', '🌙', AppColors.modeSleep),
-      ModeData('Хочу сфокусироваться', '◎', AppColors.modeFocus),
+    final l10n = AppLocalizations.of(context)!;
+    final modes = [
+      ModeData(l10n.modeCalmTitle, '🪷', AppColors.modeCalm),
+      ModeData(l10n.modeEnergyTitle, '☀️', AppColors.modeEnergy),
+      ModeData(l10n.modeSleepTitle, '🌙', AppColors.modeSleep),
+      ModeData(l10n.modeFocusTitle, '◎', AppColors.modeFocus),
     ];
 
     return Column(

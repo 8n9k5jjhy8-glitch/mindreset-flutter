@@ -1671,6 +1671,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Irregular schedule'**
   String get personalDetailsSleepProblemIrregularSchedule;
+
+  /// No description provided for @modesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes'**
+  String get modesTitle;
+
+  /// No description provided for @modesTopCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What helps you most often'**
+  String get modesTopCardTitle;
+
+  /// No description provided for @modesTopCardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on your current history, the mode most often completed is: Calm mode.'**
+  String get modesTopCardSubtitle;
+
+  /// No description provided for @modesManualSelectionStressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual mode selection'**
+  String get modesManualSelectionStressTitle;
+
+  /// No description provided for @modesCreateSessionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create session. Please try again.'**
+  String get modesCreateSessionError;
+
+  /// No description provided for @modesOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open mode: {error}'**
+  String modesOpenError(Object error);
+
+  /// No description provided for @modeCalmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm mode'**
+  String get modeCalmTitle;
+
+  /// No description provided for @modeEnergyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Need energy'**
+  String get modeEnergyTitle;
+
+  /// No description provided for @modeSleepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep preparation'**
+  String get modeSleepTitle;
+
+  /// No description provided for @modeFocusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'I want to focus'**
+  String get modeFocusTitle;
+
+  /// No description provided for @modeVisualContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Visual contact with AI'**
+  String get modeVisualContactTitle;
+
+  /// No description provided for @modeVisualContactSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation with an AI human in a visual contact format.'**
+  String get modeVisualContactSubtitle;
+
+  /// No description provided for @modeTrustedContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact a trusted person'**
+  String get modeTrustedContactTitle;
+
+  /// No description provided for @modeTrustedContactSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If needed, you can quickly reach a trusted person.'**
+  String get modeTrustedContactSubtitle;
+
+  /// No description provided for @myStateNowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My state right now'**
+  String get myStateNowTitle;
+
+  /// No description provided for @stateUpdatesFromBiometrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Your state is updated automatically based on biometrics.'**
+  String get stateUpdatesFromBiometrics;
+
+  /// No description provided for @professionProfileHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your life context so recommendations are more accurate and useful.'**
+  String get professionProfileHelper;
 }
 
 class _AppLocalizationsDelegate

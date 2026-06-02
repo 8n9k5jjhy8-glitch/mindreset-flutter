@@ -840,4 +840,62 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get personalDetailsSleepProblemIrregularSchedule => 'לו\"ז לא סדיר';
+
+  @override
+  String get modesTitle => 'מצבים';
+
+  @override
+  String get modesTopCardTitle => 'מה עוזר לך לרוב';
+
+  @override
+  String get modesTopCardSubtitle =>
+      'לפי ההיסטוריה הנוכחית שלך, המצב שמגיע לסיום בתדירות הגבוהה ביותר הוא: מצב רוגע.';
+
+  @override
+  String get modesManualSelectionStressTitle => 'בחירה ידנית של מצב';
+
+  @override
+  String get modesCreateSessionError => 'לא ניתן היה ליצור סשן. נסה שוב.';
+
+  @override
+  String modesOpenError(Object error) {
+    return 'לא ניתן היה לפתוח את המצב: $error';
+  }
+
+  @override
+  String get modeCalmTitle => 'מצב רוגע';
+
+  @override
+  String get modeEnergyTitle => 'צריך אנרגיה';
+
+  @override
+  String get modeSleepTitle => 'הכנה לשינה';
+
+  @override
+  String get modeFocusTitle => 'אני רוצה להתמקד';
+
+  @override
+  String get modeVisualContactTitle => 'קשר חזותי עם AI';
+
+  @override
+  String get modeVisualContactSubtitle =>
+      'פתח שיחה עם אדם מבוסס AI בפורמט של קשר חזותי.';
+
+  @override
+  String get modeTrustedContactTitle => 'קשר עם אדם קרוב';
+
+  @override
+  String get modeTrustedContactSubtitle =>
+      'במידת הצורך אפשר ליצור במהירות קשר עם אדם מהימן.';
+
+  @override
+  String get myStateNowTitle => 'המצב שלי עכשיו';
+
+  @override
+  String get stateUpdatesFromBiometrics =>
+      'המצב מתעדכן אוטומטית על סמך נתוני ביומטריה.';
+
+  @override
+  String get professionProfileHelper =>
+      'בחר את הקשר החיים שלך כדי שההמלצות יהיו מדויקות ומועילות יותר.';
 }

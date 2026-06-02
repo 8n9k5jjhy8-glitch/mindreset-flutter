@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
 
 import '../../../app/router.dart';
 import '../../intervention/data/repositories/sessions_repository.dart';
@@ -24,20 +25,20 @@ class _ModesScreenState extends State<ModesScreen> {
     required String modeKey,
     required String modeTitle,
     String? source,
-    int stressLevel = 2,
-    String stressTitle = 'Ручной выбор режима',
+    required String stressTitle,
   }) async {
     if (_openingModeKey != null) return;
 
     setState(() => _openingModeKey = modeKey);
 
     try {
+      final l10n = AppLocalizations.of(context)!;
       final resolvedSource = source ?? 'modes_screen';
 
       final sessionId = await _sessionsRepository.createSession(
         modeKey: modeKey,
         modeTitle: modeTitle,
-        stressLevel: stressLevel,
+        stressLevel: 2,
         stressTitle: stressTitle,
         source: resolvedSource,
         status: 'started',
@@ -47,8 +48,8 @@ class _ModesScreenState extends State<ModesScreen> {
 
       if (sessionId == null || sessionId.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Не удалось создать сессию. Попробуй ещё раз.'),
+          SnackBar(
+            content: Text(l10n.modesCreateSessionError),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -61,7 +62,7 @@ class _ModesScreenState extends State<ModesScreen> {
           'sessionId': sessionId,
           'modeTitle': modeTitle,
           'source': resolvedSource,
-          'stressLevel': stressLevel,
+          'stressLevel': 2,
           'stressTitle': stressTitle,
           'status': 'started',
         },
@@ -71,9 +72,10 @@ class _ModesScreenState extends State<ModesScreen> {
     } catch (e) {
       if (!mounted) return;
 
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Не удалось открыть режим: $e'),
+          content: Text(l10n.modesOpenError(e.toString())),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -86,6 +88,8 @@ class _ModesScreenState extends State<ModesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6F1),
       appBar: AppBar(
@@ -101,9 +105,9 @@ class _ModesScreenState extends State<ModesScreen> {
                   color: Color(0xFF223127),
                 ),
               ),
-        title: const Text(
-          'Режимы',
-          style: TextStyle(
+        title: Text(
+          l10n.modesTitle,
+          style: const TextStyle(
             color: Color(0xFF223127),
             fontWeight: FontWeight.w800,
             fontSize: 22,
@@ -115,81 +119,88 @@ class _ModesScreenState extends State<ModesScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            const _TopInfoCard(),
+            _TopInfoCard(
+              title: l10n.modesTopCardTitle,
+              subtitle: l10n.modesTopCardSubtitle,
+            ),
             const SizedBox(height: 16),
             _ModeTile(
-              title: 'Режим спокойствия',
+              title: l10n.modeCalmTitle,
               icon: Icons.spa_rounded,
               accent: const Color(0xFF80916E),
               background: const Color(0xFFE8EEE5),
               isLoading: _isOpening('calm'),
               onTap: () => _openMode(
-                modeTitle: 'Режим спокойствия',
+                modeTitle: l10n.modeCalmTitle,
                 modeKey: 'calm',
+                stressTitle: l10n.modesManualSelectionStressTitle,
               ),
             ),
             const SizedBox(height: 14),
             _ModeTile(
-              title: 'Нужна энергия',
+              title: l10n.modeEnergyTitle,
               icon: Icons.wb_sunny_rounded,
               accent: const Color(0xFFB88846),
               background: const Color(0xFFF3EADF),
               isLoading: _isOpening('energy'),
               onTap: () => _openMode(
-                modeTitle: 'Нужна энергия',
+                modeTitle: l10n.modeEnergyTitle,
                 modeKey: 'energy',
+                stressTitle: l10n.modesManualSelectionStressTitle,
               ),
             ),
             const SizedBox(height: 14),
             _ModeTile(
-              title: 'Подготовка ко сну',
+              title: l10n.modeSleepTitle,
               icon: Icons.nightlight_round,
               accent: const Color(0xFF7F8ABC),
               background: const Color(0xFFE7E9F4),
               isLoading: _isOpening('sleep'),
               onTap: () => _openMode(
-                modeTitle: 'Подготовка ко сну',
+                modeTitle: l10n.modeSleepTitle,
                 modeKey: 'sleep',
+                stressTitle: l10n.modesManualSelectionStressTitle,
               ),
             ),
             const SizedBox(height: 14),
             _ModeTile(
-              title: 'Хочу сфокусироваться',
+              title: l10n.modeFocusTitle,
               icon: Icons.adjust_rounded,
               accent: const Color(0xFF6A8B98),
               background: const Color(0xFFE3EEF1),
               isLoading: _isOpening('focus'),
               onTap: () => _openMode(
-                modeTitle: 'Хочу сфокусироваться',
+                modeTitle: l10n.modeFocusTitle,
                 modeKey: 'focus',
+                stressTitle: l10n.modesManualSelectionStressTitle,
               ),
             ),
             const SizedBox(height: 14),
             _ModeTile(
-              title: 'Визуальный контакт с AI',
-              subtitle:
-                  'Открой разговор с AI-человеком в формате визуального контакта.',
+              title: l10n.modeVisualContactTitle,
+              subtitle: l10n.modeVisualContactSubtitle,
               icon: Icons.videocam_rounded,
               accent: const Color(0xFF7B69A7),
               background: const Color(0xFFECE7F5),
               isLoading: _isOpening('visual_contact'),
               onTap: () => _openMode(
-                modeTitle: 'Визуальный контакт с AI',
+                modeTitle: l10n.modeVisualContactTitle,
                 modeKey: 'visual_contact',
+                stressTitle: l10n.modesManualSelectionStressTitle,
               ),
             ),
             const SizedBox(height: 14),
             _ModeTile(
-              title: 'Связь с близким человеком',
-              subtitle:
-                  'При необходимости можно быстро выйти на связь с доверенным человеком.',
+              title: l10n.modeTrustedContactTitle,
+              subtitle: l10n.modeTrustedContactSubtitle,
               icon: Icons.phone_in_talk_rounded,
               accent: const Color(0xFFA17456),
               background: const Color(0xFFF1E8E1),
               isLoading: _isOpening('trusted_contact'),
               onTap: () => _openMode(
-                modeTitle: 'Связь с близким человеком',
+                modeTitle: l10n.modeTrustedContactTitle,
                 modeKey: 'trusted_contact',
+                stressTitle: l10n.modesManualSelectionStressTitle,
               ),
             ),
           ],
@@ -200,7 +211,13 @@ class _ModesScreenState extends State<ModesScreen> {
 }
 
 class _TopInfoCard extends StatelessWidget {
-  const _TopInfoCard();
+  const _TopInfoCard({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -211,21 +228,21 @@ class _TopInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE9E5DD)),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Что чаще помогает именно тебе',
-            style: TextStyle(
+            title,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
               color: Color(0xFF2E3A2F),
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'По текущей истории чаще всего до завершения доходит режим: Режим спокойствия.',
-            style: TextStyle(
+            subtitle,
+            style: const TextStyle(
               fontSize: 13,
               height: 1.4,
               color: Color(0xFF6C756A),

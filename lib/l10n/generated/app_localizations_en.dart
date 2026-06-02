@@ -859,4 +859,63 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get personalDetailsSleepProblemIrregularSchedule =>
       'Irregular schedule';
+
+  @override
+  String get modesTitle => 'Modes';
+
+  @override
+  String get modesTopCardTitle => 'What helps you most often';
+
+  @override
+  String get modesTopCardSubtitle =>
+      'Based on your current history, the mode most often completed is: Calm mode.';
+
+  @override
+  String get modesManualSelectionStressTitle => 'Manual mode selection';
+
+  @override
+  String get modesCreateSessionError =>
+      'Could not create session. Please try again.';
+
+  @override
+  String modesOpenError(Object error) {
+    return 'Could not open mode: $error';
+  }
+
+  @override
+  String get modeCalmTitle => 'Calm mode';
+
+  @override
+  String get modeEnergyTitle => 'Need energy';
+
+  @override
+  String get modeSleepTitle => 'Sleep preparation';
+
+  @override
+  String get modeFocusTitle => 'I want to focus';
+
+  @override
+  String get modeVisualContactTitle => 'Visual contact with AI';
+
+  @override
+  String get modeVisualContactSubtitle =>
+      'Start a conversation with an AI human in a visual contact format.';
+
+  @override
+  String get modeTrustedContactTitle => 'Contact a trusted person';
+
+  @override
+  String get modeTrustedContactSubtitle =>
+      'If needed, you can quickly reach a trusted person.';
+
+  @override
+  String get myStateNowTitle => 'My state right now';
+
+  @override
+  String get stateUpdatesFromBiometrics =>
+      'Your state is updated automatically based on biometrics.';
+
+  @override
+  String get professionProfileHelper =>
+      'Choose your life context so recommendations are more accurate and useful.';
 }

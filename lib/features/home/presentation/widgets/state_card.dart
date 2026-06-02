@@ -65,14 +65,14 @@ class StateCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Моё состояние сейчас',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
+                      Text(
+                        l10n.myStateNowTitle,
+                        style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
                       ),
                       const SizedBox(height: 4),
                       Text(

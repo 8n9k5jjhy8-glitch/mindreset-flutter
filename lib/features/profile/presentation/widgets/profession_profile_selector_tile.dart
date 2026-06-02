@@ -85,11 +85,11 @@ class ProfessionProfileSelectorTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Выбери свой контекст жизни, чтобы рекомендации были точнее и полезнее.',
+                      Text(
+                        l10n.professionProfileHelper,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           height: 1.32,
                           fontWeight: FontWeight.w600,

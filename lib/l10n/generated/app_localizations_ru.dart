@@ -862,4 +862,63 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get personalDetailsSleepProblemIrregularSchedule =>
       'Нерегулярный график';
+
+  @override
+  String get modesTitle => 'Режимы';
+
+  @override
+  String get modesTopCardTitle => 'Что чаще помогает именно тебе';
+
+  @override
+  String get modesTopCardSubtitle =>
+      'По текущей истории чаще всего до завершения доходит режим: Режим спокойствия.';
+
+  @override
+  String get modesManualSelectionStressTitle => 'Ручной выбор режима';
+
+  @override
+  String get modesCreateSessionError =>
+      'Не удалось создать сессию. Попробуй ещё раз.';
+
+  @override
+  String modesOpenError(Object error) {
+    return 'Не удалось открыть режим: $error';
+  }
+
+  @override
+  String get modeCalmTitle => 'Режим спокойствия';
+
+  @override
+  String get modeEnergyTitle => 'Нужна энергия';
+
+  @override
+  String get modeSleepTitle => 'Подготовка ко сну';
+
+  @override
+  String get modeFocusTitle => 'Хочу сфокусироваться';
+
+  @override
+  String get modeVisualContactTitle => 'Визуальный контакт с AI';
+
+  @override
+  String get modeVisualContactSubtitle =>
+      'Открой разговор с AI-человеком в формате визуального контакта.';
+
+  @override
+  String get modeTrustedContactTitle => 'Связь с близким человеком';
+
+  @override
+  String get modeTrustedContactSubtitle =>
+      'При необходимости можно быстро выйти на связь с доверенным человеком.';
+
+  @override
+  String get myStateNowTitle => 'МОЁ СОСТОЯНИЕ СЕЙЧАС';
+
+  @override
+  String get stateUpdatesFromBiometrics =>
+      'Состояние обновляется автоматически на основе биометрии.';
+
+  @override
+  String get professionProfileHelper =>
+      'Выбери свой контекст жизни, чтобы рекомендации были точнее и полезнее.';
 }

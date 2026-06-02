@@ -202,7 +202,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     if (selected != null &&
         selected.isNotEmpty &&
         !items.any((item) => item.value == selected)) {
-      items.insert(0, _OptionItem(selected, _buildTimezoneLabel(selected)));
+      items.insert(
+        0,
+        _OptionItem(selected, (_) => _buildTimezoneLabel(selected)),
+      );
     }
 
     return items;
@@ -338,6 +341,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     required ValueChanged<String?> onChanged,
     double? menuMaxHeight,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+
     return DropdownButtonFormField<String>(
       initialValue: value,
       isExpanded: true,
@@ -351,7 +356,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 (item) => DropdownMenuItem<String>(
                   value: item.value,
                   child: Text(
-                    item.label,
+                    item.label(l10n),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: const TextStyle(
@@ -369,7 +374,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               (item) => Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  item.label,
+                  item.label(l10n),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -479,6 +484,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     required Set<String> selected,
     required ValueChanged<String> onToggle,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -508,7 +515,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 final isSelected = selected.contains(item.value);
                 return FilterChip(
                   label: Text(
-                    item.label,
+                    item.label(l10n),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -873,10 +880,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 }
 
 class _OptionItem {
-  _OptionItem(this.value, this.label);
+  const _OptionItem(this.value, this.labelBuilder);
 
   final String value;
-  final String label;
+  final String Function(AppLocalizations l10n) labelBuilder;
+
+  String label(AppLocalizations l10n) => labelBuilder(l10n);
 }
 
 String _buildTimezoneLabel(String timezone) {
@@ -914,69 +923,9 @@ String _buildTimezoneLabel(String timezone) {
   return customLabels[timezone] ?? timezone.replaceAll('_', ' ');
 }
 
-const Set<String> _languageValues = {
-  'ru',
-  'en',
-  'he',
-  'es',
-  'fr',
-  'de',
-  'uk',
-  'pt',
-  'ar',
-};
-final List<_OptionItem> _languageItems = [
-  _OptionItem('ru', 'Russian'),
-  _OptionItem('en', 'English'),
-  _OptionItem('he', 'עברית'),
-  _OptionItem('uk', 'Українська'),
-  _OptionItem('de', 'Deutsch'),
-  _OptionItem('fr', 'Français'),
-  _OptionItem('es', 'Español'),
-  _OptionItem('pt', 'Português'),
-  _OptionItem('ar', 'العربية'),
-];
-
-const Set<String> _timezoneValues = {
-  'Asia/Jerusalem',
-  'Europe/Moscow',
-  'Europe/Berlin',
-  'Europe/London',
-  'Europe/Paris',
-  'Europe/Warsaw',
-  'Europe/Kyiv',
-  'Europe/Riga',
-  'Europe/Vilnius',
-  'Europe/Tallinn',
-  'America/New_York',
-  'America/Los_Angeles',
-  'America/Toronto',
-  'America/Chicago',
-  'Asia/Tbilisi',
-  'Asia/Yerevan',
-  'Asia/Baku',
-  'Asia/Dubai',
-  'Europe/Istanbul',
-  'Asia/Almaty',
-  'Asia/Tashkent',
-  'Asia/Bishkek',
-  'Asia/Bangkok',
-  'Asia/Singapore',
-  'Asia/Tokyo',
-  'Asia/Seoul',
-  'Australia/Sydney',
-};
-final List<_OptionItem> _timezoneItems =
-    _timezoneValues
-        .map((value) => _OptionItem(value, _buildTimezoneLabel(value)))
-        .toList();
+const Set<String> _languageValues = {'ru', 'en', 'he'};
 
 const Set<String> _dailyRoutineValues = {'early_bird', 'balanced', 'night_owl'};
-final List<_OptionItem> _dailyRoutineItems = [
-  _OptionItem('early_bird', 'Early bird'),
-  _OptionItem('balanced', 'Balanced'),
-  _OptionItem('night_owl', 'Night owl'),
-];
 
 const Set<String> _energyDipTimeValues = {
   'morning',
@@ -984,19 +933,8 @@ const Set<String> _energyDipTimeValues = {
   'evening',
   'none',
 };
-final List<_OptionItem> _energyDipTimeItems = [
-  _OptionItem('morning', 'Morning'),
-  _OptionItem('afternoon', 'Afternoon'),
-  _OptionItem('evening', 'Evening'),
-  _OptionItem('none', 'No obvious dip'),
-];
 
 const Set<String> _sessionLengthValues = {'short', 'medium', 'long'};
-final List<_OptionItem> _sessionLengthItems = [
-  _OptionItem('short', 'Short sessions'),
-  _OptionItem('medium', 'Medium sessions'),
-  _OptionItem('long', 'Long sessions'),
-];
 
 const Set<String> _supportStyleValues = {
   'gentle',
@@ -1004,12 +942,6 @@ const Set<String> _supportStyleValues = {
   'direct',
   'warm',
 };
-final List<_OptionItem> _supportStyleItems = [
-  _OptionItem('gentle', 'Gentle'),
-  _OptionItem('structured', 'Structured'),
-  _OptionItem('direct', 'Direct'),
-  _OptionItem('warm', 'Warm'),
-];
 
 const Set<String> _workFormatValues = {
   'office',
@@ -1019,21 +951,8 @@ const Set<String> _workFormatValues = {
   'flexible',
   'other',
 };
-final List<_OptionItem> _workFormatItems = [
-  _OptionItem('office', 'Office'),
-  _OptionItem('remote', 'Remote'),
-  _OptionItem('hybrid', 'Hybrid'),
-  _OptionItem('shift', 'Shift'),
-  _OptionItem('flexible', 'Flexible'),
-  _OptionItem('other', 'Other'),
-];
 
 const Set<String> _sleepScheduleValues = {'stable', 'unstable', 'shift'};
-final List<_OptionItem> _sleepScheduleItems = [
-  _OptionItem('stable', 'Stable'),
-  _OptionItem('unstable', 'Unstable'),
-  _OptionItem('shift', 'Shift'),
-];
 
 const Set<String> _selfRegulationValues = {
   'none',
@@ -1041,12 +960,6 @@ const Set<String> _selfRegulationValues = {
   'intermediate',
   'advanced',
 };
-final List<_OptionItem> _selfRegulationItems = [
-  _OptionItem('none', 'No experience'),
-  _OptionItem('beginner', 'Beginner'),
-  _OptionItem('intermediate', 'Intermediate'),
-  _OptionItem('advanced', 'Advanced'),
-];
 
 const Set<String> _emergencyHelpValues = {
   'self_help',
@@ -1054,31 +967,153 @@ const Set<String> _emergencyHelpValues = {
   'hotline',
   'depends',
 };
+
+final List<_OptionItem> _languageItems = [
+  _OptionItem('ru', (_) => 'Russian'),
+  _OptionItem('en', (_) => 'English'),
+  _OptionItem('he', (_) => 'עברית'),
+];
+
+final List<_OptionItem> _timezoneItems = [
+  _OptionItem('Asia/Jerusalem', (_) => _buildTimezoneLabel('Asia/Jerusalem')),
+  _OptionItem('Europe/Moscow', (_) => _buildTimezoneLabel('Europe/Moscow')),
+  _OptionItem('Europe/Berlin', (_) => _buildTimezoneLabel('Europe/Berlin')),
+  _OptionItem('Europe/London', (_) => _buildTimezoneLabel('Europe/London')),
+  _OptionItem(
+    'America/New_York',
+    (_) => _buildTimezoneLabel('America/New_York'),
+  ),
+  _OptionItem(
+    'America/Los_Angeles',
+    (_) => _buildTimezoneLabel('America/Los_Angeles'),
+  ),
+  _OptionItem('America/Toronto', (_) => _buildTimezoneLabel('America/Toronto')),
+  _OptionItem('America/Chicago', (_) => _buildTimezoneLabel('America/Chicago')),
+  _OptionItem('America/Miami', (_) => _buildTimezoneLabel('America/Miami')),
+  _OptionItem('Europe/Paris', (_) => _buildTimezoneLabel('Europe/Paris')),
+  _OptionItem('Europe/Warsaw', (_) => _buildTimezoneLabel('Europe/Warsaw')),
+  _OptionItem('Europe/Kyiv', (_) => _buildTimezoneLabel('Europe/Kyiv')),
+  _OptionItem('Europe/Riga', (_) => _buildTimezoneLabel('Europe/Riga')),
+  _OptionItem('Europe/Vilnius', (_) => _buildTimezoneLabel('Europe/Vilnius')),
+  _OptionItem('Europe/Tallinn', (_) => _buildTimezoneLabel('Europe/Tallinn')),
+  _OptionItem('Asia/Tbilisi', (_) => _buildTimezoneLabel('Asia/Tbilisi')),
+  _OptionItem('Asia/Yerevan', (_) => _buildTimezoneLabel('Asia/Yerevan')),
+  _OptionItem('Asia/Baku', (_) => _buildTimezoneLabel('Asia/Baku')),
+  _OptionItem('Asia/Dubai', (_) => _buildTimezoneLabel('Asia/Dubai')),
+  _OptionItem('Asia/Istanbul', (_) => _buildTimezoneLabel('Asia/Istanbul')),
+  _OptionItem('Asia/Almaty', (_) => _buildTimezoneLabel('Asia/Almaty')),
+  _OptionItem('Asia/Tashkent', (_) => _buildTimezoneLabel('Asia/Tashkent')),
+  _OptionItem('Asia/Bishkek', (_) => _buildTimezoneLabel('Asia/Bishkek')),
+  _OptionItem('Asia/Bangkok', (_) => _buildTimezoneLabel('Asia/Bangkok')),
+  _OptionItem('Asia/Singapore', (_) => _buildTimezoneLabel('Asia/Singapore')),
+  _OptionItem('Asia/Tokyo', (_) => _buildTimezoneLabel('Asia/Tokyo')),
+  _OptionItem('Asia/Seoul', (_) => _buildTimezoneLabel('Asia/Seoul')),
+  _OptionItem(
+    'Australia/Sydney',
+    (_) => _buildTimezoneLabel('Australia/Sydney'),
+  ),
+];
+
+final List<_OptionItem> _dailyRoutineItems = [
+  _OptionItem('early_bird', (l10n) => l10n.personalDetailsRoutineEarlyBird),
+  _OptionItem('balanced', (l10n) => l10n.personalDetailsRoutineBalanced),
+  _OptionItem('night_owl', (l10n) => l10n.personalDetailsRoutineNightOwl),
+];
+
+final List<_OptionItem> _energyDipTimeItems = [
+  _OptionItem('morning', (l10n) => l10n.personalDetailsDipMorning),
+  _OptionItem('afternoon', (l10n) => l10n.personalDetailsDipAfternoon),
+  _OptionItem('evening', (l10n) => l10n.personalDetailsDipEvening),
+  _OptionItem('none', (l10n) => l10n.personalDetailsDipNone),
+];
+
+final List<_OptionItem> _sessionLengthItems = [
+  _OptionItem('short', (l10n) => l10n.personalDetailsSessionShort),
+  _OptionItem('medium', (l10n) => l10n.personalDetailsSessionMedium),
+  _OptionItem('long', (l10n) => l10n.personalDetailsSessionLong),
+];
+
+final List<_OptionItem> _supportStyleItems = [
+  _OptionItem('gentle', (l10n) => l10n.personalDetailsSupportGentle),
+  _OptionItem('structured', (l10n) => l10n.personalDetailsSupportStructured),
+  _OptionItem('direct', (l10n) => l10n.personalDetailsSupportDirect),
+  _OptionItem('warm', (l10n) => l10n.personalDetailsSupportWarm),
+];
+
+final List<_OptionItem> _workFormatItems = [
+  _OptionItem('office', (l10n) => l10n.personalDetailsWorkOffice),
+  _OptionItem('remote', (l10n) => l10n.personalDetailsWorkRemote),
+  _OptionItem('hybrid', (l10n) => l10n.personalDetailsWorkHybrid),
+  _OptionItem('shift', (l10n) => l10n.personalDetailsWorkShift),
+  _OptionItem('flexible', (l10n) => l10n.personalDetailsWorkFlexible),
+  _OptionItem('other', (l10n) => l10n.personalDetailsWorkOther),
+];
+
+final List<_OptionItem> _sleepScheduleItems = [
+  _OptionItem('stable', (l10n) => l10n.personalDetailsSleepStableOption),
+  _OptionItem('unstable', (l10n) => l10n.personalDetailsSleepUnstableOption),
+  _OptionItem('shift', (l10n) => l10n.personalDetailsSleepShiftOption),
+];
+
+final List<_OptionItem> _selfRegulationItems = [
+  _OptionItem('none', (l10n) => l10n.personalDetailsExperienceNone),
+  _OptionItem('beginner', (l10n) => l10n.personalDetailsExperienceBeginner),
+  _OptionItem(
+    'intermediate',
+    (l10n) => l10n.personalDetailsExperienceIntermediate,
+  ),
+  _OptionItem('advanced', (l10n) => l10n.personalDetailsExperienceAdvanced),
+];
+
 final List<_OptionItem> _emergencyHelpItems = [
-  _OptionItem('self_help', 'Self-help'),
-  _OptionItem('contact_person', 'Contact trusted person'),
-  _OptionItem('hotline', 'Reach out for help'),
-  _OptionItem('depends', 'Depends on situation'),
+  _OptionItem('self_help', (l10n) => l10n.personalDetailsEmergencySelfHelp),
+  _OptionItem(
+    'contact_person',
+    (l10n) => l10n.personalDetailsEmergencyContactPerson,
+  ),
+  _OptionItem('hotline', (l10n) => l10n.personalDetailsEmergencyHotline),
+  _OptionItem('depends', (l10n) => l10n.personalDetailsEmergencyDepends),
 ];
 
 final List<_OptionItem> _stressTriggerItems = [
-  _OptionItem('work', 'Work'),
-  _OptionItem('career', 'Career'),
-  _OptionItem('family', 'Family'),
-  _OptionItem('relationships', 'Relationships'),
-  _OptionItem('sleep', 'Sleep'),
-  _OptionItem('health', 'Health'),
-  _OptionItem('money', 'Money'),
-  _OptionItem('uncertainty', 'Uncertainty'),
-  _OptionItem('anxiety', 'Anxiety'),
-  _OptionItem('social', 'Social life'),
+  _OptionItem('work', (l10n) => l10n.personalDetailsTriggerWork),
+  _OptionItem('career', (l10n) => l10n.personalDetailsTriggerCareer),
+  _OptionItem('family', (l10n) => l10n.personalDetailsTriggerFamily),
+  _OptionItem(
+    'relationships',
+    (l10n) => l10n.personalDetailsTriggerRelationships,
+  ),
+  _OptionItem('sleep', (l10n) => l10n.personalDetailsTriggerSleep),
+  _OptionItem('health', (l10n) => l10n.personalDetailsTriggerHealth),
+  _OptionItem('money', (l10n) => l10n.personalDetailsTriggerMoney),
+  _OptionItem('uncertainty', (l10n) => l10n.personalDetailsTriggerUncertainty),
+  _OptionItem('anxiety', (l10n) => l10n.personalDetailsTriggerAnxiety),
+  _OptionItem('social', (l10n) => l10n.personalDetailsTriggerSocial),
 ];
 
 final List<_OptionItem> _sleepProblemItems = [
-  _OptionItem('falling_asleep', 'Hard to fall asleep'),
-  _OptionItem('night_waking', 'Wake up at night'),
-  _OptionItem('early_waking', 'Early waking'),
-  _OptionItem('light_sleep', 'Light sleep'),
-  _OptionItem('racing_thoughts', 'Racing thoughts'),
-  _OptionItem('irregular_schedule', 'Irregular schedule'),
+  _OptionItem(
+    'falling_asleep',
+    (l10n) => l10n.personalDetailsSleepProblemFallingAsleep,
+  ),
+  _OptionItem(
+    'night_waking',
+    (l10n) => l10n.personalDetailsSleepProblemNightWaking,
+  ),
+  _OptionItem(
+    'early_waking',
+    (l10n) => l10n.personalDetailsSleepProblemEarlyWaking,
+  ),
+  _OptionItem(
+    'light_sleep',
+    (l10n) => l10n.personalDetailsSleepProblemLightSleep,
+  ),
+  _OptionItem(
+    'racing_thoughts',
+    (l10n) => l10n.personalDetailsSleepProblemRacingThoughts,
+  ),
+  _OptionItem(
+    'irregular_schedule',
+    (l10n) => l10n.personalDetailsSleepProblemIrregularSchedule,
+  ),
 ];
