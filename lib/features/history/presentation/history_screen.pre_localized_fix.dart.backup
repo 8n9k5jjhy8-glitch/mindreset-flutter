@@ -42,9 +42,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (_) {
       if (!mounted) return;
 
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _error =
-            'Не удалось загрузить историю. Потяни вниз, чтобы попробовать ещё раз.';
+        _error = l10n.historyLoadError;
         _isLoading = false;
       });
     }
@@ -57,17 +57,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final Map<String, List<SessionRecord>> grouped = {};
 
     for (final session in _meaningfulSessions) {
-      final key =
-          session.modeTitle.trim().isEmpty ? 'Без названия' : session.modeTitle;
+      final key = session.modeKey.trim().isEmpty ? 'unknown' : session.modeKey;
       grouped.putIfAbsent(key, () => []).add(session);
     }
 
-    final result =
-        grouped.entries
-            .map(
-              (entry) => ModeHistoryGroup.fromSessions(entry.key, entry.value),
-            )
-            .toList();
+    final result = grouped.entries
+        .map((entry) => ModeHistoryGroup.fromSessions(entry.key, entry.value))
+        .toList();
 
     result.sort((a, b) {
       final byLastTime = b.lastCreatedAt.compareTo(a.lastCreatedAt);
@@ -126,14 +122,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
         centerTitle: true,
         title: Text(
           l10n.tabHistory,
-          style: TextStyle(
+          style: const TextStyle(
             color: Color(0xFF223127),
             fontSize: 22,
             fontWeight: FontWeight.w800,
           ),
         ),
       ),
-      body: RefreshIndicator(onRefresh: _loadSessions, child: _buildBody(l10n)),
+      body: RefreshIndicator(
+        onRefresh: _loadSessions,
+        child: _buildBody(l10n),
+      ),
     );
   }
 
@@ -154,7 +153,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [_ErrorCard(message: _error!)],
+        children: [
+          _ErrorCard(message: _error!),
+        ],
       );
     }
 
@@ -162,14 +163,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: const [
+        children: [
           _SummaryCard(
             totalLaunches: 0,
             fullyCompletedCount: 0,
             helpedDisplayValue: '-',
           ),
-          SizedBox(height: 16),
-          _EmptyHistory(),
+          const SizedBox(height: 16),
+          _EmptyHistory(
+            title: l10n.historyEmptyTitle,
+            subtitle: l10n.historyEmptySubtitle,
+          ),
         ],
       );
     }
@@ -202,26 +206,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
 class ModeHistoryGroup {
   const ModeHistoryGroup({
-    required this.modeTitle,
     required this.modeKey,
     required this.totalRuns,
     required this.completedRuns,
     required this.helpedRuns,
     required this.activeRuns,
     required this.lastCreatedAt,
-    required this.lastStressTitle,
+    required this.lastStressLevel,
+    required this.lastStressTitleRaw,
     required this.sessions,
     required this.averageDuration,
   });
 
-  final String modeTitle;
   final String modeKey;
   final int totalRuns;
   final int completedRuns;
   final int helpedRuns;
   final int activeRuns;
   final DateTime lastCreatedAt;
-  final String lastStressTitle;
+  final int lastStressLevel;
+  final String lastStressTitleRaw;
   final List<SessionRecord> sessions;
   final Duration? averageDuration;
 
@@ -231,7 +235,7 @@ class ModeHistoryGroup {
   }
 
   factory ModeHistoryGroup.fromSessions(
-    String modeTitle,
+    String modeKey,
     List<SessionRecord> sessions,
   ) {
     final sorted = [...sessions]
@@ -240,35 +244,31 @@ class ModeHistoryGroup {
 
     final completed = sorted.where((s) => s.status == 'completed').toList();
     final helped = sorted.where((s) => s.resultRating == 'helped').toList();
-    final active =
-        sorted
-            .where((s) => s.status == 'started' || s.status == 'in_progress')
-            .toList();
+    final active = sorted
+        .where((s) => s.status == 'started' || s.status == 'in_progress')
+        .toList();
 
-    final durations =
-        sorted
-            .map((s) => _safeDurationFromSession(s))
-            .whereType<Duration>()
-            .toList();
+    final durations = sorted
+        .map(_safeDurationFromSession)
+        .whereType<Duration>()
+        .toList();
 
     Duration? avg;
     if (durations.isNotEmpty) {
-      final totalMs = durations.fold<int>(
-        0,
-        (sum, item) => sum + item.inMilliseconds,
-      );
+      final totalMs =
+          durations.fold<int>(0, (sum, item) => sum + item.inMilliseconds);
       avg = Duration(milliseconds: totalMs ~/ durations.length);
     }
 
     return ModeHistoryGroup(
-      modeTitle: modeTitle,
-      modeKey: latest.modeKey,
+      modeKey: modeKey,
       totalRuns: sorted.length,
       completedRuns: completed.length,
       helpedRuns: helped.length,
       activeRuns: active.length,
       lastCreatedAt: latest.createdAt,
-      lastStressTitle: latest.stressTitle,
+      lastStressLevel: latest.stressLevel,
+      lastStressTitleRaw: latest.stressTitle,
       sessions: sorted,
       averageDuration: avg,
     );
@@ -289,6 +289,7 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -301,7 +302,7 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Text(
             l10n.historySummaryTitle,
-            style: TextStyle(
+            style: const TextStyle(
               color: Color(0xFF263126),
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -310,7 +311,7 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             l10n.historySummarySubtitle,
-            style: TextStyle(
+            style: const TextStyle(
               color: Color(0xFF6D756B),
               fontSize: 13,
               height: 1.35,
@@ -385,7 +386,7 @@ class _SummaryMetric extends StatelessWidget {
             style: TextStyle(
               color: accent,
               fontSize: 22,
-              height: 1.0,
+              height: 1,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -415,10 +416,10 @@ class _SectionIntro extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           color: Color(0xFF253126),
           fontSize: 15,
           fontWeight: FontWeight.w800,
@@ -429,7 +430,10 @@ class _SectionIntro extends StatelessWidget {
 }
 
 class _ModeHistoryCard extends StatelessWidget {
-  const _ModeHistoryCard({required this.group, required this.onTap});
+  const _ModeHistoryCard({
+    required this.group,
+    required this.onTap,
+  });
 
   final ModeHistoryGroup group;
   final VoidCallback onTap;
@@ -437,6 +441,7 @@ class _ModeHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Material(
       color: const Color(0xFFF8F8F5),
       borderRadius: BorderRadius.circular(22),
@@ -476,7 +481,13 @@ class _ModeHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      l10n.historyLastState(_localizedStressTitle(context, rawTitle: group.lastStressTitle)),
+                      l10n.historyLastState(
+                        _localizedStressTitle(
+                          context,
+                          level: group.lastStressLevel,
+                          rawTitle: group.lastStressTitleRaw,
+                        ),
+                      ),
                       style: const TextStyle(
                         color: Color(0xFF70806E),
                         fontSize: 13,
@@ -494,7 +505,9 @@ class _ModeHistoryCard extends StatelessWidget {
                           foreground: const Color(0xFF657262),
                         ),
                         _MetaPill(
-                          text: l10n.historyCompletedRunsCount(group.completedRuns),
+                          text: l10n.historyCompletedRunsCount(
+                            group.completedRuns,
+                          ),
                           background: const Color(0xFFE4EFE8),
                           foreground: const Color(0xFF4D735E),
                         ),
@@ -505,8 +518,9 @@ class _ModeHistoryCard extends StatelessWidget {
                             foreground: const Color(0xFF9C753B),
                           ),
                         _MetaPill(
-                          text:
-                              l10n.historyLastTime(_formatDateTime(group.lastCreatedAt)),
+                          text: l10n.historyLastTime(
+                            _formatDateTime(group.lastCreatedAt),
+                          ),
                           background: const Color(0xFFF2EFE9),
                           foreground: const Color(0xFF7D786F),
                         ),
@@ -514,7 +528,9 @@ class _ModeHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      l10n.historyCompletionRate(_formatPercent(group.completedRate)),
+                      l10n.historyCompletionRate(
+                        _formatPercent(group.completedRate),
+                      ),
                       style: const TextStyle(
                         color: Color(0xFF8A9386),
                         fontSize: 12,
@@ -524,7 +540,9 @@ class _ModeHistoryCard extends StatelessWidget {
                     if (group.averageDuration != null) ...[
                       const SizedBox(height: 6),
                       Text(
-                        l10n.historyAverageDuration(_formatDuration(context, group.averageDuration!)),
+                        l10n.historyAverageDuration(
+                          _formatDuration(context, group.averageDuration!),
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF8A9386),
                           fontSize: 12,
@@ -536,7 +554,10 @@ class _ModeHistoryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFF879083)),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF879083),
+              ),
             ],
           ),
         ),
@@ -553,6 +574,7 @@ class _ModeHistorySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return SafeArea(
       top: false,
       child: DraggableScrollableSheet(
@@ -593,12 +615,15 @@ class _ModeHistorySheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        l10n.historySheetRunsCompleted(group.totalRuns, group.completedRuns),
+                        l10n.historySheetRunsCompleted(
+                          group.totalRuns,
+                          group.completedRuns,
+                        ),
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF6D756B),
                           fontWeight: FontWeight.w600,
-                        )
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -609,26 +634,30 @@ class _ModeHistorySheet extends StatelessWidget {
                           fontSize: 13,
                           color: Color(0xFF6D756B),
                           fontWeight: FontWeight.w600,
-                        )
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        l10n.historyCompletionRate(_formatPercent(group.completedRate)),
+                        l10n.historyCompletionRate(
+                          _formatPercent(group.completedRate),
+                        ),
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF6D756B),
                           fontWeight: FontWeight.w600,
-                        )
+                        ),
                       ),
                       if (group.averageDuration != null) ...[
                         const SizedBox(height: 6),
                         Text(
-                          l10n.historyAverageDuration(_formatDuration(context, group.averageDuration!)),
+                          l10n.historyAverageDuration(
+                            _formatDuration(context, group.averageDuration!),
+                          ),
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF6D756B),
                             fontWeight: FontWeight.w600,
-                          )
+                          ),
                         ),
                       ],
                     ],
@@ -687,12 +716,18 @@ class _SessionRunTile extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            l10n.historyLastState(_localizedStressTitle(context, rawTitle: session.stressTitle)),
+            l10n.historyStateLabel(
+              _localizedStressTitle(
+                context,
+                level: session.stressLevel,
+                rawTitle: session.stressTitle,
+              ),
+            ),
             style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF697567),
               fontWeight: FontWeight.w600,
-            )
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -706,13 +741,15 @@ class _SessionRunTile extends StatelessWidget {
               ),
               if (session.resultRating != null)
                 _MetaPill(
-                  text: _resultLabel(session.resultRating!),
+                  text: _resultLabel(context, session.resultRating!),
                   background: _resultBackground(session.resultRating!),
                   foreground: _resultForeground(session.resultRating!),
                 ),
               if (duration != null)
                 _MetaPill(
-                  text: _durationLabel(context, _formatDuration(context, duration)),
+                  text: l10n.historyDurationLabel(
+                    _formatDuration(context, duration),
+                  ),
                   background: const Color(0xFFF0EEE8),
                   foreground: const Color(0xFF7C776E),
                 ),
@@ -721,22 +758,22 @@ class _SessionRunTile extends StatelessWidget {
           if ((session.resultNote ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
-              _resultText(context, session.resultNote!.trim()),
+              l10n.historyResultLabel(session.resultNote!.trim()),
               style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
                 color: Color(0xFF7A8477),
-              )
+              ),
             ),
           ] else if ((session.note ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
-              _commentText(context, session.note!.trim()),
+              l10n.historyCommentLabel(session.note!.trim()),
               style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
                 color: Color(0xFF7A8477),
-              )
+              ),
             ),
           ],
         ],
@@ -789,7 +826,13 @@ class _StatusUi {
 }
 
 class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
+  const _EmptyHistory({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -800,21 +843,21 @@ class _EmptyHistory extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE7ECE3)),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'История пока пустая',
-            style: TextStyle(
+            title,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
               color: Color(0xFF263126),
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'Когда пользователь начнёт запускать режимы, здесь появится понятная картина: что включал чаще всего, что проходил полностью и что действительно помогало.',
-            style: TextStyle(
+            subtitle,
+            style: const TextStyle(
               fontSize: 13,
               height: 1.45,
               color: Color(0xFF71806F),
@@ -846,7 +889,7 @@ class _ErrorCard extends StatelessWidget {
           fontSize: 14,
           color: Color(0xFF8A5F5F),
           height: 1.4,
-        )
+        ),
       ),
     );
   }
@@ -893,66 +936,41 @@ class _HistorySkeleton extends StatelessWidget {
 }
 
 _StatusUi _statusUi(BuildContext context, String status) {
-  final code = Localizations.localeOf(context).languageCode;
-
-  String tr({
-    required String ru,
-    required String en,
-    required String he,
-  }) {
-    switch (code) {
-      case 'en':
-        return en;
-      case 'he':
-        return he;
-      default:
-        return ru;
-    }
-  }
+  final l10n = AppLocalizations.of(context)!;
 
   switch (status) {
     case 'completed':
       return _StatusUi(
-        label: tr(
-          ru: 'пройдено полностью',
-          en: 'fully completed',
-          he: 'הושלם במלואו',
-        ),
+        label: l10n.historyStatusCompleted,
         background: const Color(0xFFE2F0EA),
         foreground: const Color(0xFF44705D),
       );
     case 'started':
     case 'in_progress':
       return _StatusUi(
-        label: tr(
-          ru: 'активно',
-          en: 'active',
-          he: 'פעיל',
-        ),
+        label: l10n.historyStatusActive,
         background: const Color(0xFFE8F1E4),
         foreground: const Color(0xFF5D7E57),
       );
     default:
       return _StatusUi(
-        label: tr(
-          ru: 'без статуса',
-          en: 'no status',
-          he: 'ללא סטטוס',
-        ),
+        label: l10n.historyStatusNoStatus,
         background: const Color(0xFFEEEFEA),
         foreground: const Color(0xFF727B71),
       );
   }
 }
 
-String _resultLabel(String rating) {
+String _resultLabel(BuildContext context, String rating) {
+  final l10n = AppLocalizations.of(context)!;
+
   switch (rating) {
     case 'helped':
-      return 'помогло';
+      return l10n.historyResultHelped;
     case 'neutral':
-      return 'нейтрально';
+      return l10n.historyResultNeutral;
     case 'not_helped':
-      return 'не помогло';
+      return l10n.historyResultNotHelped;
     default:
       return rating;
   }
@@ -981,6 +999,71 @@ Color _resultForeground(String rating) {
       return const Color(0xFF9A5E5A);
     default:
       return const Color(0xFF6E746D);
+  }
+}
+
+String _localizedModeTitle(BuildContext context, String modeKey) {
+  final l10n = AppLocalizations.of(context)!;
+
+  switch (modeKey) {
+    case 'calm':
+      return l10n.modeCalmTitle;
+    case 'energy':
+      return l10n.modeEnergyTitle;
+    case 'sleep':
+      return l10n.modeSleepTitle;
+    case 'focus':
+      return l10n.modeFocusTitle;
+    case 'visual_contact':
+      return l10n.modeVisualContactTitle;
+    case 'trusted_contact':
+      return l10n.modeTrustedContactTitle;
+    case 'urgent_help':
+      return l10n.modeUrgentHelp;
+    case 'recovery':
+      return l10n.modeRecovery;
+    default:
+      return 'MindReset AI';
+  }
+}
+
+String _localizedStressTitle(
+  BuildContext context, {
+  required int level,
+  required String rawTitle,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+
+  switch (level) {
+    case 1:
+    case 2:
+    case 3:
+      return l10n.stateCalmTitle;
+    case 4:
+    case 5:
+    case 6:
+      return l10n.stateTenseTitle;
+    case 7:
+    case 8:
+      return l10n.stateOverloadedTitle;
+    case 9:
+    case 10:
+      return l10n.stateCriticalTitle;
+    default:
+      final normalized = rawTitle.trim().toLowerCase();
+      if (normalized == 'calm' || normalized == 'спокойствие') {
+        return l10n.stateCalmTitle;
+      }
+      if (normalized == 'tension' || normalized == 'напряжение') {
+        return l10n.stateTenseTitle;
+      }
+      if (normalized == 'overloaded' || normalized == 'перегрузка') {
+        return l10n.stateOverloadedTitle;
+      }
+      if (normalized == 'critical' || normalized == 'критическое') {
+        return l10n.stateCriticalTitle;
+      }
+      return rawTitle;
   }
 }
 
@@ -1014,54 +1097,21 @@ String _formatDateTime(DateTime value) {
 }
 
 String _formatDuration(BuildContext context, Duration duration) {
-  final code = Localizations.localeOf(context).languageCode;
-
-  String sec(int v) {
-    switch (code) {
-      case 'en':
-        return '$v sec';
-      case 'he':
-        return '$v שנ׳';
-      default:
-        return '$v сек';
-    }
-  }
-
-  String min(int v) {
-    switch (code) {
-      case 'en':
-        return '$v min';
-      case 'he':
-        return '$v דק׳';
-      default:
-        return '$v мин';
-    }
-  }
-
-  String hour(int v) {
-    switch (code) {
-      case 'en':
-        return '$v h';
-      case 'he':
-        return '$v שע׳';
-      default:
-        return '$v ч';
-    }
-  }
+  final l10n = AppLocalizations.of(context)!;
 
   if (duration.inMinutes < 1) {
-    return sec(duration.inSeconds);
+    return l10n.historySecondsShort(duration.inSeconds);
   }
 
   final hours = duration.inHours;
   final minutes = duration.inMinutes.remainder(60);
 
   if (hours > 0) {
-    if (minutes == 0) return hour(hours);
-    return '${hour(hours)} ${min(minutes)}';
+    if (minutes == 0) return l10n.historyHoursShort(hours);
+    return l10n.historyHoursMinutesShort(hours, minutes);
   }
 
-  return min(duration.inMinutes);
+  return l10n.historyMinutesShort(duration.inMinutes);
 }
 
 String _formatPercent(double value) {
@@ -1083,133 +1133,3 @@ Duration? _safeDurationFromSession(SessionRecord session) {
 }
 
 String _two(int value) => value.toString().padLeft(2, '0');
-
-
-String _localizedModeTitle(BuildContext context, String modeKey) {
-  final l10n = AppLocalizations.of(context)!;
-  switch (modeKey.trim().toLowerCase()) {
-    case 'need_energy':
-    case 'energy':
-      return l10n.modeNeedEnergy;
-    case 'sleep':
-    case 'sleep_preparation':
-      return l10n.modeSleepPreparation;
-    case 'calm':
-    case 'calm_mode':
-      return l10n.modeCalm;
-    case 'recovery':
-      return l10n.modeRecovery;
-    case 'focus':
-    case 'want_to_focus':
-      return l10n.modeFocus;
-    case 'quick_reset':
-      return l10n.modeQuickReset;
-    case 'urgent_help':
-      return l10n.modeUrgentHelp;
-    case 'soft_support':
-      return l10n.modeSoftSupport;
-    case 'suitable_help':
-      return l10n.modeSuitableHelp;
-    case 'visual_contact':
-      return l10n.modeVisualContactTitle;
-    case 'custom':
-      return l10n.modeSuitableHelp;
-    default:
-      return _localizedModeTitleByKey(modeKey);
-  }
-}
-
-String _localizedModeTitleByKey(String modeKey) {
-  switch (modeKey.trim().toLowerCase()) {
-    case 'need_energy':
-    case 'energy':
-      return 'energy';
-    case 'sleep':
-    case 'sleep_preparation':
-      return 'sleep';
-    case 'calm':
-    case 'calm_mode':
-      return 'calm';
-    case 'recovery':
-      return 'recovery';
-    case 'focus':
-    case 'want_to_focus':
-      return 'focus';
-    case 'quick_reset':
-      return 'quick_reset';
-    case 'urgent_help':
-      return 'urgent_help';
-    case 'soft_support':
-      return 'soft_support';
-    case 'suitable_help':
-      return 'suitable_help';
-    case 'visual_contact':
-      return 'visual_contact';
-    case 'custom':
-      return 'custom';
-    default:
-      return modeKey;
-  }
-}
-
-String _localizedStressTitle(BuildContext context, {required String rawTitle}) {
-  final l10n = AppLocalizations.of(context)!;
-  final normalized = rawTitle.trim().toLowerCase();
-
-  if (normalized == 'calm' || normalized == 'спокойствие' || normalized == 'רוגע') {
-    return l10n.stateCalmTitle;
-  }
-  if (normalized == 'tension' || normalized == 'напряжение' || normalized == 'מתח') {
-    return l10n.stateTenseTitle;
-  }
-  if (normalized == 'overloaded' || normalized == 'перегрузка' || normalized == 'עומס') {
-    return l10n.stateOverloadedTitle;
-  }
-  if (normalized == 'critical' || normalized == 'критическое' || normalized == 'קריטי') {
-    return l10n.stateCriticalTitle;
-  }
-  if (normalized == 'manual mode selection' ||
-      normalized == 'ручной выбор режима' ||
-      normalized == 'בחירה ידנית של מצב') {
-    return l10n.modesManualSelectionStressTitle;
-  }
-
-  return rawTitle;
-}
-
-
-String _durationLabel(BuildContext context, String value) {
-  final code = Localizations.localeOf(context).languageCode;
-  switch (code) {
-    case 'en':
-      return 'Duration: $value';
-    case 'he':
-      return 'משך: $value';
-    default:
-      return 'Длился $value';
-  }
-}
-
-String _resultText(BuildContext context, String value) {
-  final code = Localizations.localeOf(context).languageCode;
-  switch (code) {
-    case 'en':
-      return 'Result: $value';
-    case 'he':
-      return 'תוצאה: $value';
-    default:
-      return 'Результат: $value';
-  }
-}
-
-String _commentText(BuildContext context, String value) {
-  final code = Localizations.localeOf(context).languageCode;
-  switch (code) {
-    case 'en':
-      return 'Comment: $value';
-    case 'he':
-      return 'הערה: $value';
-    default:
-      return 'Комментарий: $value';
-  }
-}

@@ -314,13 +314,22 @@ class _InterventionScreenState extends State<InterventionScreen> {
         return;
       }
 
-      setState(() {
-        _sessionStarted = true;
-        _sessionCompleted = false;
-        _isStarting = false;
-      });
+      final navigator = Navigator.of(context);
 
-      await _loadTrustedContact();
+      navigator.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => InterventionScreen(
+            arguments: {
+              ...widget.arguments,
+              'sessionId': sessionId,
+              'status': 'started',
+              'isPreview': false,
+            },
+            sessionsRepository: _sessionsRepository,
+            userContext: widget.userContext,
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -332,7 +341,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
         ),
       );
     } finally {
-      if (mounted && !_sessionStarted) {
+      if (mounted) {
         setState(() => _isStarting = false);
       }
     }
@@ -582,7 +591,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
   String get _primaryActionTitle {
     if (_isPreview) {
-      return 'Рекомендация';
+      return 'Сейчас рекомендуется короткая сессия помощи';
     }
     if (_sessionCompleted) {
       return 'Session completed';
@@ -636,103 +645,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   Widget build(BuildContext context) {
     final formats = vm.supportFormats;
     final step = vm.step;
-    final displayTitle =
-        _isPreview ? 'Подходит формат помощи' : vm.title;
-
-    if (_isPreview && !vm.isTrustedContact) {
-      return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.background,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            color: AppColors.textPrimary,
-            onPressed: _handleClose,
-          ),
-          title: const Text(
-            'Рекомендация',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          centerTitle: true,
-        ),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            children: [
-              _HeroCard(
-                vm: vm,
-                displayTitle: 'Подходит короткая сессия помощи',
-                isPreviewForUi: true,
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Начните с этого формата помощи.',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 24,
-                        height: 1.2,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isStarting ? null : _startPreviewSession,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          minimumSize: const Size.fromHeight(56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: Text(
-                          _isStarting ? 'Запуск…' : 'Начать сеанс',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: TextButton(
-                  onPressed: _handleClose,
-                  child: const Text(
-                    'Отменить и вернуться',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -741,18 +653,19 @@ class _InterventionScreenState extends State<InterventionScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: _isCancellingBeforeClose
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2.2),
-                )
-              : const Icon(Icons.arrow_back_ios_new_rounded),
+          icon:
+              _isCancellingBeforeClose
+                  ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                  : const Icon(Icons.arrow_back_ios_new_rounded),
           color: AppColors.textPrimary,
           onPressed: _isCancellingBeforeClose ? null : _handleClose,
         ),
         title: Text(
-          displayTitle,
+          vm.title,
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
@@ -764,28 +677,16 @@ class _InterventionScreenState extends State<InterventionScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           children: [
-            _HeroCard(
-              vm: vm,
-              displayTitle: displayTitle,
-              isPreviewForUi: _isPreview,
-            ),
+            _HeroCard(vm: vm),
             const SizedBox(height: 16),
-            if (_isPreview) ...[
-              _PreviewStartCard(onStart: _startPreviewSession),
-              const SizedBox(height: 16),
-            ] else ...[
-              _CurrentFocusCard(vm: vm),
-              const SizedBox(height: 16),
-              _SessionMetaCard(vm: vm),
-              const SizedBox(height: 16),
-              _StepTimelineCard(step: step),
-              const SizedBox(height: 16),
-              _SupportFormatsCard(
-                formats: formats,
-                onTapFormat: _showFormatInfo,
-              ),
-              const SizedBox(height: 16),
-            ],
+            _CurrentFocusCard(vm: vm),
+            const SizedBox(height: 16),
+            _SessionMetaCard(vm: vm),
+            const SizedBox(height: 16),
+            _StepTimelineCard(step: step),
+            const SizedBox(height: 16),
+            _SupportFormatsCard(formats: formats, onTapFormat: _showFormatInfo),
+            const SizedBox(height: 16),
             if (vm.isTrustedContact)
               _TrustedContactCard(
                 formKey: _trustedContactFormKey,
@@ -1392,15 +1293,9 @@ class SupportFormat {
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.vm,
-    required this.displayTitle,
-    this.isPreviewForUi = false,
-  });
+  const _HeroCard({required this.vm});
 
   final InterventionViewModel vm;
-  final String displayTitle;
-  final bool isPreviewForUi;
 
   @override
   Widget build(BuildContext context) {
@@ -1442,7 +1337,7 @@ class _HeroCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  isPreviewForUi ? 'Рекомендация' : vm.step.label,
+                  vm.step.label,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -1454,7 +1349,16 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            displayTitle,
+            vm.personalGreeting,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            vm.title,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
@@ -1463,69 +1367,41 @@ class _HeroCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          const SizedBox(height: 10),
-          const Text(
-            'Формат подобран по вашему текущему состоянию.',
-            style: TextStyle(
+          Text(
+            vm.subtitle,
+            style: const TextStyle(
               color: Colors.white,
-              fontSize: 16,
-              height: 1.4,
-              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              height: 1.45,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-
-class _PreviewStartCard extends StatelessWidget {
-  const _PreviewStartCard({required this.onStart});
-
-  final VoidCallback onStart;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'На основе анализа вашего состояния рекомендуется короткая сессия помощи.',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 24,
-              height: 1.2,
-              fontWeight: FontWeight.w800,
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(18),
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onStart,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 20,
                 ),
-              ),
-              child: const Text(
-                'Нажмите, чтобы открыть',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    vm.summaryText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -1768,7 +1644,7 @@ class _SupportFormatsCard extends StatelessWidget {
         children: [
           const _SectionLabel(
             icon: Icons.widgets_rounded,
-            text: 'Рекомендация',
+            text: 'Support formats',
           ),
           const SizedBox(height: 14),
           ...formats.map(
@@ -2178,7 +2054,7 @@ class _PrimaryActionCard extends StatelessWidget {
         children: [
           const _SectionLabel(
             icon: Icons.play_circle_fill_rounded,
-            text: 'Рекомендация',
+            text: 'Primary action',
           ),
           const SizedBox(height: 12),
           Text(
@@ -2247,7 +2123,7 @@ class _ActionButtonsBlock extends StatelessWidget {
     required this.isTrustedContact,
     required this.isSessionStarted,
     required this.isSessionCompleted,
-    this.isPreview = false,
+    required this.isPreview,
   });
 
   final bool isCompleting;
@@ -2261,31 +2137,9 @@ class _ActionButtonsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isPreview) {
-      return SizedBox(
-        width: double.infinity,
-        child: TextButton(
-          onPressed: isClosing || isCompleting ? null : onClose,
-          style: TextButton.styleFrom(
-            minimumSize: const Size.fromHeight(50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-          ),
-          child: Text(
-            isClosing ? 'Закрытие...' : 'Отменить и вернуться',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-            ),
-          ),
-        ),
-      );
-    }
-
     final completeEnabled =
-        isTrustedContact || (isSessionStarted && !isSessionCompleted);
+        !isPreview &&
+        (isTrustedContact || (isSessionStarted && !isSessionCompleted));
 
     return Column(
       children: [
@@ -2293,7 +2147,9 @@ class _ActionButtonsBlock extends StatelessWidget {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed:
-                isCompleting || isClosing || !completeEnabled ? null : onComplete,
+                isCompleting || isClosing || !completeEnabled
+                    ? null
+                    : onComplete,
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
               side: BorderSide(
@@ -2323,10 +2179,7 @@ class _ActionButtonsBlock extends StatelessWidget {
                   : isSessionCompleted
                   ? 'Completed'
                   : 'Mark as completed',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
             ),
           ),
         ),
@@ -2342,7 +2195,11 @@ class _ActionButtonsBlock extends StatelessWidget {
               ),
             ),
             child: Text(
-              isClosing ? 'Closing...' : 'Close',
+              isClosing
+                  ? 'Closing...'
+                  : isPreview
+                  ? 'Отменить и вернуться'
+                  : 'Остановить сеанс',
               style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w700,

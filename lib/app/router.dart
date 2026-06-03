@@ -10,7 +10,7 @@ import '../features/home/presentation/home_screen.dart';
 import '../features/intervention/presentation/intervention_screen.dart';
 import '../features/modes/presentation/modes_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
-import '../features/sessions/presentation/history_screen.dart';
+import '../features/history/presentation/history_screen.dart';
 import '../features/visual_contact/presentation/visual_contact_screen.dart';
 import 'main_shell.dart';
 

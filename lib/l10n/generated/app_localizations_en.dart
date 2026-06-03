@@ -918,4 +918,139 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get professionProfileHelper =>
       'Choose your life context so recommendations are more accurate and useful.';
+
+  @override
+  String get historySummaryTitle => 'Quick summary';
+
+  @override
+  String get historySummarySubtitle =>
+      'See which modes you actually use and come back to most.';
+
+  @override
+  String get historySummaryLaunches => 'Launches';
+
+  @override
+  String get historySummaryCompleted => 'Completed';
+
+  @override
+  String get historySummaryHelped => 'Helped';
+
+  @override
+  String get historyUsedModesTitle => 'Modes you already used';
+
+  @override
+  String get historyEmptyTitle => 'History is empty';
+
+  @override
+  String get historyEmptySubtitle =>
+      'Once you start using modes, this screen will show what you return to, complete, and find helpful.';
+
+  @override
+  String get historyLoadError => 'Could not load history. Pull to try again.';
+
+  @override
+  String historyLastState(Object value) {
+    return 'Last state: $value';
+  }
+
+  @override
+  String historyRunsCount(int count) {
+    return '$count launches';
+  }
+
+  @override
+  String historyCompletedRunsCount(int count) {
+    return '$count fully completed';
+  }
+
+  @override
+  String historyHelpedRunsCount(int count) {
+    return '$count helped';
+  }
+
+  @override
+  String historyLastTime(Object value) {
+    return 'Last time $value';
+  }
+
+  @override
+  String historyCompletionRate(Object value) {
+    return 'Completion rate: $value';
+  }
+
+  @override
+  String historyAverageDuration(Object value) {
+    return 'Average duration: $value';
+  }
+
+  @override
+  String historySheetRunsCompleted(int runs, int completed) {
+    return 'Launches: $runs • Fully completed: $completed';
+  }
+
+  @override
+  String historySheetHelped(int count) {
+    return 'Helped: $count';
+  }
+
+  @override
+  String get historySheetHelpedNone => 'Helped: —';
+
+  @override
+  String historyStateLabel(Object value) {
+    return 'State: $value';
+  }
+
+  @override
+  String historyDurationLabel(Object value) {
+    return 'Lasted $value';
+  }
+
+  @override
+  String historyResultLabel(Object value) {
+    return 'Result: $value';
+  }
+
+  @override
+  String historyCommentLabel(Object value) {
+    return 'Comment: $value';
+  }
+
+  @override
+  String get historyStatusCompleted => 'completed';
+
+  @override
+  String get historyStatusActive => 'active';
+
+  @override
+  String get historyStatusNoStatus => 'no status';
+
+  @override
+  String get historyResultHelped => 'helped';
+
+  @override
+  String get historyResultNeutral => 'neutral';
+
+  @override
+  String get historyResultNotHelped => 'didn\'t help';
+
+  @override
+  String historySecondsShort(int count) {
+    return '$count sec';
+  }
+
+  @override
+  String historyMinutesShort(int count) {
+    return '$count min';
+  }
+
+  @override
+  String historyHoursShort(int count) {
+    return '$count h';
+  }
+
+  @override
+  String historyHoursMinutesShort(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
 }

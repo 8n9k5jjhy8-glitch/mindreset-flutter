@@ -484,9 +484,9 @@ class _ProfileSummaryCard extends StatelessWidget {
                 child: Text(
                   profession.title(l10n),
                   style: const TextStyle(
-                    fontSize: 22,
-                    height: 1.1,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    height: 1.15,
+                    fontWeight: FontWeight.w700,
                     color: Color(0xFF223127),
                   ),
                 ),

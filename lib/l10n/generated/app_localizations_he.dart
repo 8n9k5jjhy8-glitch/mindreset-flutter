@@ -898,4 +898,140 @@ class AppLocalizationsHe extends AppLocalizations {
   @override
   String get professionProfileHelper =>
       'בחר את הקשר החיים שלך כדי שההמלצות יהיו מדויקות ומועילות יותר.';
+
+  @override
+  String get historySummaryTitle => 'סיכום קצר';
+
+  @override
+  String get historySummarySubtitle =>
+      'כאן רואים באילו מצבים באמת השתמשת ולאילו חזרת הכי הרבה.';
+
+  @override
+  String get historySummaryLaunches => 'הפעלות';
+
+  @override
+  String get historySummaryCompleted => 'הושלמו';
+
+  @override
+  String get historySummaryHelped => 'עזר';
+
+  @override
+  String get historyUsedModesTitle => 'מצבים שכבר השתמשת בהם';
+
+  @override
+  String get historyEmptyTitle => 'ההיסטוריה עדיין ריקה';
+
+  @override
+  String get historyEmptySubtitle =>
+      'כשתתחיל להשתמש במצבים, כאן תראה למה חזרת, מה השלמת ומה באמת עזר.';
+
+  @override
+  String get historyLoadError =>
+      'לא הצלחנו לטעון את ההיסטוריה. משוך למטה כדי לנסות שוב.';
+
+  @override
+  String historyLastState(Object value) {
+    return 'מצב אחרון: $value';
+  }
+
+  @override
+  String historyRunsCount(int count) {
+    return '$count הפעלות';
+  }
+
+  @override
+  String historyCompletedRunsCount(int count) {
+    return '$count הושלמו במלואם';
+  }
+
+  @override
+  String historyHelpedRunsCount(int count) {
+    return '$count עזר';
+  }
+
+  @override
+  String historyLastTime(Object value) {
+    return 'פעם אחרונה $value';
+  }
+
+  @override
+  String historyCompletionRate(Object value) {
+    return 'שיעור השלמה: $value';
+  }
+
+  @override
+  String historyAverageDuration(Object value) {
+    return 'משך ממוצע: $value';
+  }
+
+  @override
+  String historySheetRunsCompleted(int runs, int completed) {
+    return 'הפעלות: $runs • הושלמו במלואם: $completed';
+  }
+
+  @override
+  String historySheetHelped(int count) {
+    return 'עזר: $count';
+  }
+
+  @override
+  String get historySheetHelpedNone => 'עזר: —';
+
+  @override
+  String historyStateLabel(Object value) {
+    return 'מצב: $value';
+  }
+
+  @override
+  String historyDurationLabel(Object value) {
+    return 'נמשך $value';
+  }
+
+  @override
+  String historyResultLabel(Object value) {
+    return 'תוצאה: $value';
+  }
+
+  @override
+  String historyCommentLabel(Object value) {
+    return 'הערה: $value';
+  }
+
+  @override
+  String get historyStatusCompleted => 'הושלם';
+
+  @override
+  String get historyStatusActive => 'פעיל';
+
+  @override
+  String get historyStatusNoStatus => 'ללא סטטוס';
+
+  @override
+  String get historyResultHelped => 'עזר';
+
+  @override
+  String get historyResultNeutral => 'ניטרלי';
+
+  @override
+  String get historyResultNotHelped => 'לא עזר';
+
+  @override
+  String historySecondsShort(int count) {
+    return '$count שנ׳';
+  }
+
+  @override
+  String historyMinutesShort(int count) {
+    return '$count דק׳';
+  }
+
+  @override
+  String historyHoursShort(int count) {
+    return '$count ש׳';
+  }
+
+  @override
+  String historyHoursMinutesShort(int hours, int minutes) {
+    return '$hours ש׳ $minutes דק׳';
+  }
 }

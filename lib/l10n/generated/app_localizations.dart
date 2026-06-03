@@ -1773,6 +1773,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose your life context so recommendations are more accurate and useful.'**
   String get professionProfileHelper;
+
+  /// No description provided for @historySummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick summary'**
+  String get historySummaryTitle;
+
+  /// No description provided for @historySummarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See which modes you actually use and come back to most.'**
+  String get historySummarySubtitle;
+
+  /// No description provided for @historySummaryLaunches.
+  ///
+  /// In en, this message translates to:
+  /// **'Launches'**
+  String get historySummaryLaunches;
+
+  /// No description provided for @historySummaryCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get historySummaryCompleted;
+
+  /// No description provided for @historySummaryHelped.
+  ///
+  /// In en, this message translates to:
+  /// **'Helped'**
+  String get historySummaryHelped;
+
+  /// No description provided for @historyUsedModesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes you already used'**
+  String get historyUsedModesTitle;
+
+  /// No description provided for @historyEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History is empty'**
+  String get historyEmptyTitle;
+
+  /// No description provided for @historyEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Once you start using modes, this screen will show what you return to, complete, and find helpful.'**
+  String get historyEmptySubtitle;
+
+  /// No description provided for @historyLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load history. Pull to try again.'**
+  String get historyLoadError;
+
+  /// No description provided for @historyLastState.
+  ///
+  /// In en, this message translates to:
+  /// **'Last state: {value}'**
+  String historyLastState(Object value);
+
+  /// No description provided for @historyRunsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} launches'**
+  String historyRunsCount(int count);
+
+  /// No description provided for @historyCompletedRunsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fully completed'**
+  String historyCompletedRunsCount(int count);
+
+  /// No description provided for @historyHelpedRunsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} helped'**
+  String historyHelpedRunsCount(int count);
+
+  /// No description provided for @historyLastTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Last time {value}'**
+  String historyLastTime(Object value);
+
+  /// No description provided for @historyCompletionRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion rate: {value}'**
+  String historyCompletionRate(Object value);
+
+  /// No description provided for @historyAverageDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Average duration: {value}'**
+  String historyAverageDuration(Object value);
+
+  /// No description provided for @historySheetRunsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Launches: {runs} • Fully completed: {completed}'**
+  String historySheetRunsCompleted(int runs, int completed);
+
+  /// No description provided for @historySheetHelped.
+  ///
+  /// In en, this message translates to:
+  /// **'Helped: {count}'**
+  String historySheetHelped(int count);
+
+  /// No description provided for @historySheetHelpedNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Helped: —'**
+  String get historySheetHelpedNone;
+
+  /// No description provided for @historyStateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'State: {value}'**
+  String historyStateLabel(Object value);
+
+  /// No description provided for @historyDurationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lasted {value}'**
+  String historyDurationLabel(Object value);
+
+  /// No description provided for @historyResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Result: {value}'**
+  String historyResultLabel(Object value);
+
+  /// No description provided for @historyCommentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment: {value}'**
+  String historyCommentLabel(Object value);
+
+  /// No description provided for @historyStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'completed'**
+  String get historyStatusCompleted;
+
+  /// No description provided for @historyStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'active'**
+  String get historyStatusActive;
+
+  /// No description provided for @historyStatusNoStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'no status'**
+  String get historyStatusNoStatus;
+
+  /// No description provided for @historyResultHelped.
+  ///
+  /// In en, this message translates to:
+  /// **'helped'**
+  String get historyResultHelped;
+
+  /// No description provided for @historyResultNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'neutral'**
+  String get historyResultNeutral;
+
+  /// No description provided for @historyResultNotHelped.
+  ///
+  /// In en, this message translates to:
+  /// **'didn\'t help'**
+  String get historyResultNotHelped;
+
+  /// No description provided for @historySecondsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sec'**
+  String historySecondsShort(int count);
+
+  /// No description provided for @historyMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min'**
+  String historyMinutesShort(int count);
+
+  /// No description provided for @historyHoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h'**
+  String historyHoursShort(int count);
+
+  /// No description provided for @historyHoursMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String historyHoursMinutesShort(int hours, int minutes);
 }
 
 class _AppLocalizationsDelegate

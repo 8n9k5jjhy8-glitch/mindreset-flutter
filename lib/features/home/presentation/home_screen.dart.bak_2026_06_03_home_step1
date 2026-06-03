@@ -192,13 +192,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return const RecommendationFactory().create(snapshot, l10n);
   }
 
-  Future<void> _openRecommendation({required String source}) async {
+  Future<void> _openIntervention({required String source}) async {
     final l10n = AppLocalizations.of(context)!;
     final recommendation = _buildRecommendation(l10n);
+
+    setState(() {
+      _activeSession = null;
+    });
+
+    final sessionId = await _sessionsRepository.createSession(
+      modeKey: recommendation.modeKey,
+      modeTitle: recommendation.modeTitle,
+      stressLevel: _currentLevel.number,
+      stressTitle: _currentLevel.title(l10n),
+      source: source,
+      status: 'started',
+    );
+
+    if (!mounted) return;
+    if (sessionId == null || sessionId.isEmpty) return;
 
     await context.push(
       AppRoutes.intervention,
       extra: {
+        'sessionId': sessionId,
         'modeKey': recommendation.modeKey,
         'modeTitle': recommendation.modeTitle,
         'title': recommendation.modeTitle,
@@ -206,8 +223,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         'source': source,
         'stressLevel': _currentLevel.number,
         'stressTitle': _currentLevel.title(l10n),
-        'status': 'preview',
-        'isPreview': true,
+        'status': 'started',
       },
     );
 
@@ -279,11 +295,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     StateHero(level: level, isRefreshing: false),
                     const SizedBox(height: 12),
                     _AiRecommendationCard(
-                      title:
-                          'На основе анализа вашего состояния рекомендуется короткая сессия помощи.',
-                      subtitle: 'Нажмите, чтобы открыть',
+                      title: recommendation.title,
+                      subtitle: recommendation.subtitle,
                       onTap: () {
-                        _openRecommendation(source: recommendation.source);
+                        _openIntervention(source: recommendation.source);
                       },
                     ),
                     if (_activeSession != null) ...[
@@ -548,9 +563,8 @@ class _AiRecommendationCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   width: 46,
@@ -565,7 +579,7 @@ class _AiRecommendationCard extends StatelessWidget {
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,24 +588,23 @@ class _AiRecommendationCard extends StatelessWidget {
                         title,
                         style: const TextStyle(
                           fontSize: 15,
-                          height: 1.3,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF263126),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6D8A6B),
+                          fontSize: 12,
+                          height: 1.32,
+                          color: Color(0xFF71806F),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 const Icon(
                   Icons.arrow_forward_rounded,
                   color: Color(0xFF7C8578),

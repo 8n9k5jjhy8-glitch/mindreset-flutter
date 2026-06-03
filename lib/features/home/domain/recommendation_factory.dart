@@ -45,7 +45,7 @@ class RecommendationFactory {
       );
     }
 
-    if (context.needsShortInterventions) {
+    if (context.needsShortInterventions && state.stressLevel <= 2) {
       return Recommendation(
         modeKey: 'quick_reset',
         modeTitle: l10n.recommendedShortReset,

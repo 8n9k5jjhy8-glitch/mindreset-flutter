@@ -921,4 +921,140 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get professionProfileHelper =>
       'Выбери свой контекст жизни, чтобы рекомендации были точнее и полезнее.';
+
+  @override
+  String get historySummaryTitle => 'Краткая сводка';
+
+  @override
+  String get historySummarySubtitle =>
+      'Показывает, какие режимы ты реально запускаешь и к каким возвращаешься чаще.';
+
+  @override
+  String get historySummaryLaunches => 'Запусков';
+
+  @override
+  String get historySummaryCompleted => 'Пройдено';
+
+  @override
+  String get historySummaryHelped => 'Помогло';
+
+  @override
+  String get historyUsedModesTitle => 'Режимы, которые уже использовались';
+
+  @override
+  String get historyEmptyTitle => 'История пока пустая';
+
+  @override
+  String get historyEmptySubtitle =>
+      'Когда пользователь начнёт запускать режимы, здесь будет видно, к чему он возвращается, что проходит и что помогает.';
+
+  @override
+  String get historyLoadError =>
+      'Не удалось загрузить историю. Потяни вниз, чтобы попробовать ещё раз.';
+
+  @override
+  String historyLastState(Object value) {
+    return 'Последнее состояние: $value';
+  }
+
+  @override
+  String historyRunsCount(int count) {
+    return '$count запусков';
+  }
+
+  @override
+  String historyCompletedRunsCount(int count) {
+    return '$count пройдено полностью';
+  }
+
+  @override
+  String historyHelpedRunsCount(int count) {
+    return '$count помогло';
+  }
+
+  @override
+  String historyLastTime(Object value) {
+    return 'Последний раз $value';
+  }
+
+  @override
+  String historyCompletionRate(Object value) {
+    return 'Доля полных прохождений: $value';
+  }
+
+  @override
+  String historyAverageDuration(Object value) {
+    return 'Средняя длительность: $value';
+  }
+
+  @override
+  String historySheetRunsCompleted(int runs, int completed) {
+    return 'Запусков: $runs • Пройдено полностью: $completed';
+  }
+
+  @override
+  String historySheetHelped(int count) {
+    return 'Помогло: $count';
+  }
+
+  @override
+  String get historySheetHelpedNone => 'Помогло: —';
+
+  @override
+  String historyStateLabel(Object value) {
+    return 'Состояние: $value';
+  }
+
+  @override
+  String historyDurationLabel(Object value) {
+    return 'Длился $value';
+  }
+
+  @override
+  String historyResultLabel(Object value) {
+    return 'Результат: $value';
+  }
+
+  @override
+  String historyCommentLabel(Object value) {
+    return 'Комментарий: $value';
+  }
+
+  @override
+  String get historyStatusCompleted => 'пройдено полностью';
+
+  @override
+  String get historyStatusActive => 'активно';
+
+  @override
+  String get historyStatusNoStatus => 'без статуса';
+
+  @override
+  String get historyResultHelped => 'помогло';
+
+  @override
+  String get historyResultNeutral => 'нейтрально';
+
+  @override
+  String get historyResultNotHelped => 'не помогло';
+
+  @override
+  String historySecondsShort(int count) {
+    return '$count сек';
+  }
+
+  @override
+  String historyMinutesShort(int count) {
+    return '$count мин';
+  }
+
+  @override
+  String historyHoursShort(int count) {
+    return '$count ч';
+  }
+
+  @override
+  String historyHoursMinutesShort(int hours, int minutes) {
+    return '$hours ч $minutes мин';
+  }
 }
