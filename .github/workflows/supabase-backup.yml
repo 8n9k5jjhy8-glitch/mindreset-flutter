@@ -1,66 +1,30 @@
 name: Supabase backup
-
 on:
   schedule:
     - cron: '0 */5 * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   backup:
     runs-on: ubuntu-latest
-
     env:
       PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
       PGPORT: ${{ secrets.SUPABASE_DB_PORT }}
       PGDATABASE: ${{ secrets.SUPABASE_DB_NAME }}
       PGUSER: ${{ secrets.SUPABASE_DB_USER }}
       PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: Prepare backup folder
-        run: |
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: |
           mkdir -p .backup
           TS="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
-          echo "TS=$TS" >> "$GITHUB_ENV"
-
-      - name: Dump schema
-        run: |
-          pg_dump \
-            --schema-only \
-            --no-owner \
-            --no-privileges \
-            --format=plain \
-            --file=".backup/schema-${TS}.sql"
-
-      - name: Dump data
-        run: |
-          pg_dump \
-            --data-only \
-            --no-owner \
-            --no-privileges \
-            --format=plain \
-            --inserts \
-            --file=".backup/data-${TS}.sql"
-
-      - name: Compress dumps
-        run: |
-          gzip -f ".backup/schema-${TS}.sql"
-          gzip -f ".backup/data-${TS}.sql"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+          pg_dump --schema-only --no-owner --no-privileges -f ".backup/schema-${TS}.sql"
+          pg_dump --data-only --no-owner --no-privileges --inserts -f ".backup/data-${TS}.sql"
+          gzip -f .backup/schema-${TS}.sql .backup/data-${TS}.sql
+      - uses: actions/upload-artifact@v4
         with:
-          name: supabase-backup-${{ env.TS }}
+          name: supabase-backup
           path: .backup/*
           retention-days: 30
