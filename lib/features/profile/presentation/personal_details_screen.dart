@@ -247,11 +247,15 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
       if (trustedName.isEmpty && trustedPhone.isEmpty && trustedNote.isEmpty) {
         await _profileService.clearTrustedContact();
-      } else {
+      } else if (trustedName.isNotEmpty && trustedPhone.isNotEmpty) {
         await _profileService.saveTrustedContact(
           name: trustedName,
           phone: trustedPhone,
           note: trustedNote.isEmpty ? null : trustedNote,
+        );
+      } else {
+        throw ArgumentError(
+          'Для контакта поддержки нужно заполнить и имя, и телефон.',
         );
       }
 

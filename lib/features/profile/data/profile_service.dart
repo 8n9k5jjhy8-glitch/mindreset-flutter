@@ -1,4 +1,4 @@
-import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -147,13 +147,11 @@ class ProfileService {
       emergencyHelpPreference,
     );
 
-    developer.log(
+    debugPrint(
       'PROFILE SAVE raw emergencyHelpPreference=$emergencyHelpPreference',
-      name: 'ProfileService',
     );
-    developer.log(
+    debugPrint(
       'PROFILE SAVE normalized emergencyHelpPreference=$normalizedEmergencyHelp',
-      name: 'ProfileService',
     );
 
     final updateData = <String, dynamic>{
@@ -184,9 +182,8 @@ class ProfileService {
       'crisis_plan_enabled': crisisPlanEnabled,
     };
 
-    developer.log(
+    debugPrint(
       'PROFILE SAVE payload=$updateData',
-      name: 'ProfileService',
     );
 
     try {
@@ -196,19 +193,15 @@ class ProfileService {
           .select()
           .single();
 
-      developer.log(
+      debugPrint(
         'PROFILE SAVE success',
-        name: 'ProfileService',
-      );
+        );
 
       return Profile.fromMap(Map<String, dynamic>.from(updated));
     } catch (e, st) {
-      developer.log(
+      debugPrint(
         'PROFILE SAVE failed: $e',
-        name: 'ProfileService',
-        error: e,
-        stackTrace: st,
-      );
+        );
       rethrow;
     }
   }
