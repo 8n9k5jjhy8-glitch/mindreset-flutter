@@ -1057,4 +1057,166 @@ class AppLocalizationsRu extends AppLocalizations {
   String historyHoursMinutesShort(int hours, int minutes) {
     return '$hours ч $minutes мин';
   }
+
+  @override
+  String get interventionSessionLabel => 'Сессия';
+
+  @override
+  String get interventionStart => 'Начать сеанс';
+
+  @override
+  String get interventionStarting => 'Запуск...';
+
+  @override
+  String get interventionClose => 'Закрыть';
+
+  @override
+  String get interventionRecommendationTitle => 'Рекомендация';
+
+  @override
+  String get interventionCancelAndReturn => 'Отменить и вернуться';
+
+  @override
+  String interventionTrustedContactLoadError(Object error) {
+    return 'Не удалось загрузить доверенный контакт: $error';
+  }
+
+  @override
+  String get interventionTrustedContactSaved => 'Доверенный контакт сохранён';
+
+  @override
+  String interventionTrustedContactSaveError(Object error) {
+    return 'Не удалось сохранить доверенный контакт: $error';
+  }
+
+  @override
+  String get interventionTrustedContactRemoved => 'Доверенный контакт удалён';
+
+  @override
+  String interventionTrustedContactRemoveError(Object error) {
+    return 'Не удалось удалить доверенный контакт: $error';
+  }
+
+  @override
+  String get interventionPhoneCallError => 'Не удалось начать звонок.';
+
+  @override
+  String get interventionSmsOpenError =>
+      'Не удалось открыть приложение сообщений.';
+
+  @override
+  String interventionTrustedContactSmsBody(Object name) {
+    return 'Привет, $name, мне сейчас может понадобиться поддержка. Пожалуйста, свяжись со мной, когда сможешь.';
+  }
+
+  @override
+  String get interventionStartError =>
+      'Не удалось начать сессию. Попробуй ещё раз.';
+
+  @override
+  String interventionStartErrorWithDetails(Object error) {
+    return 'Не удалось начать сессию: $error';
+  }
+
+  @override
+  String get interventionMissingSessionId =>
+      'Идентификатор сессии отсутствует. Пожалуйста, открой эту сессию заново.';
+
+  @override
+  String interventionStartedMessage(Object title) {
+    return 'Сессия начата: $title';
+  }
+
+  @override
+  String interventionCompletedMessage(Object title) {
+    return 'Сессия завершена: $title';
+  }
+
+  @override
+  String interventionCompleteError(Object error) {
+    return 'Не удалось завершить сессию: $error';
+  }
+
+  @override
+  String interventionCloseError(Object error) {
+    return 'Не удалось безопасно закрыть сессию: $error';
+  }
+
+  @override
+  String get interventionModeSleepTitle => 'Подготовка ко сну';
+
+  @override
+  String get interventionModeCalmTitle => 'Стабилизация';
+
+  @override
+  String get interventionModeFocusTitle => 'Фокус';
+
+  @override
+  String get interventionModeRecoveryTitle => 'Восстановление';
+
+  @override
+  String get interventionModeTrustedContactTitle => 'Доверенный контакт';
+
+  @override
+  String get interventionQuickAccessSubtitle => 'Быстрый доступ';
+
+  @override
+  String get interventionSummaryGeneric =>
+      'Формат подобран под ваше текущее состояние.';
+
+  @override
+  String get interventionSummaryTrustedContact =>
+      'Быстрый доступ к доверенному контакту.';
+
+  @override
+  String interventionDurationMinutesLabel(Object minutes, Object title) {
+    return '$minutes минут • $title';
+  }
+
+  @override
+  String get interventionRecommendedFastRecovery =>
+      'Рекомендуется быстрое восстановление';
+
+  @override
+  String get interventionRecommendedFormatForState =>
+      'Формат подобран под ваше текущее состояние';
+
+  @override
+  String get homeInterventionRecommendationTitle =>
+      'На основе анализа вашего состояния рекомендуется короткая сессия помощи.';
+
+  @override
+  String get homeInterventionRecommendationTapHint => 'Нажмите, чтобы открыть.';
+
+  @override
+  String get interventionRecommendationScreenTitle => 'Рекомендация';
+
+  @override
+  String get interventionFastRecoveryRecommended =>
+      'Рекомендуется быстрое восстановление';
+
+  @override
+  String get interventionFormatSelectedForState =>
+      'Формат подобран под ваше текущее состояние.';
+
+  @override
+  String get interventionStartSession => 'Начать сеанс';
+
+  @override
+  String get interventionActiveSessionTitle => 'Активная сессия';
+
+  @override
+  String get interventionSessionCardTitle => 'Сессия';
+
+  @override
+  String get interventionSessionActive => 'Сеанс активен';
+
+  @override
+  String get interventionCompleting => 'Завершение...';
+
+  @override
+  String get interventionCompleteCta => 'Завершить сеанс';
+
+  @override
+  String get interventionStartCta => 'Начать сеанс';
 }

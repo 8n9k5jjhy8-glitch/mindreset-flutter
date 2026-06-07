@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
 
 import '../../../app/router.dart';
-import '../../intervention/data/repositories/sessions_repository.dart';
 
 class ModesScreen extends StatefulWidget {
   const ModesScreen({super.key, this.onBackToHome});
@@ -15,8 +14,6 @@ class ModesScreen extends StatefulWidget {
 }
 
 class _ModesScreenState extends State<ModesScreen> {
-  final SessionsRepository _sessionsRepository = SessionsRepository();
-
   String? _openingModeKey;
 
   bool _isOpening(String modeKey) => _openingModeKey == modeKey;
@@ -32,34 +29,11 @@ class _ModesScreenState extends State<ModesScreen> {
     setState(() => _openingModeKey = modeKey);
 
     try {
-      final l10n = AppLocalizations.of(context)!;
       final resolvedSource = source ?? 'modes_screen';
 
-      final sessionId = await _sessionsRepository.createSession(
-        modeKey: modeKey,
-        modeTitle: modeTitle,
-        stressLevel: 2,
-        stressTitle: stressTitle,
-        source: resolvedSource,
-        status: 'started',
-      );
-
-      if (!mounted) return;
-
-      if (sessionId == null || sessionId.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.modesCreateSessionError),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
-      await context.push(
+      final navigation = context.push(
         AppRoutes.intervention,
         extra: {
-          'sessionId': sessionId,
           'modeKey': modeKey,
           'modeTitle': modeTitle,
           'title': modeTitle,
@@ -67,9 +41,16 @@ class _ModesScreenState extends State<ModesScreen> {
           'source': resolvedSource,
           'stressLevel': 2,
           'stressTitle': stressTitle,
-          'status': 'started',
+          'status': 'preview',
+          'isPreview': true,
         },
       );
+
+      if (mounted) {
+        setState(() => _openingModeKey = null);
+      }
+
+      await navigation;
 
       if (!mounted) return;
     } catch (e) {

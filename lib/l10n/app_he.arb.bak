@@ -362,6 +362,7 @@
   "myStateNowTitle": "המצב שלי עכשיו",
   "stateUpdatesFromBiometrics": "המצב מתעדכן אוטומטית על סמך נתוני ביומטריה.",
   "professionProfileHelper": "בחר את הקשר החיים שלך כדי שההמלצות יהיו מדויקות ומועילות יותר.",
+
   "historySummaryTitle": "סיכום קצר",
   "historySummarySubtitle": "כאן רואים באילו מצבים באמת השתמשת ולאילו חזרת הכי הרבה.",
   "historySummaryLaunches": "הפעלות",
@@ -503,100 +504,6 @@
         "type": "int"
       }
     }
-  },
-  "interventionSessionLabel": "סשן",
-  "interventionStart": "התחל סשן",
-  "interventionStarting": "מתחיל...",
-  "interventionClose": "סגור",
-  "interventionRecommendationTitle": "המלצה",
-  "interventionCancelAndReturn": "בטל וחזור",
-  "interventionTrustedContactLoadError": "טעינת איש הקשר המהימן נכשלה: {error}",
-  "@interventionTrustedContactLoadError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionTrustedContactSaved": "איש הקשר המהימן נשמר",
-  "interventionTrustedContactSaveError": "שמירת איש הקשר המהימן נכשלה: {error}",
-  "@interventionTrustedContactSaveError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionTrustedContactRemoved": "איש הקשר המהימן הוסר",
-  "interventionTrustedContactRemoveError": "הסרת איש הקשר המהימן נכשלה: {error}",
-  "@interventionTrustedContactRemoveError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionPhoneCallError": "לא ניתן היה להתחיל שיחת טלפון.",
-  "interventionSmsOpenError": "לא ניתן היה לפתוח את אפליקציית ההודעות.",
-  "interventionTrustedContactSmsBody": "היי {name}, ייתכן שאני צריך עכשיו תמיכה. אפשר ליצור איתי קשר כשתוכל?",
-  "@interventionTrustedContactSmsBody": {
-    "placeholders": {
-      "name": {}
-    }
-  },
-  "interventionStartError": "לא ניתן היה להתחיל את הסשן. נסה שוב.",
-  "interventionStartErrorWithDetails": "לא ניתן היה להתחיל את הסשן: {error}",
-  "@interventionStartErrorWithDetails": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionMissingSessionId": "מזהה הסשן חסר. פתח את הסשן מחדש.",
-  "interventionStartedMessage": "הסשן התחיל: {title}",
-  "@interventionStartedMessage": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "interventionCompletedMessage": "הסשן הושלם: {title}",
-  "@interventionCompletedMessage": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "interventionCompleteError": "לא ניתן היה להשלים את הסשן: {error}",
-  "@interventionCompleteError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionCloseError": "לא ניתן היה לסגור את הסשן בבטחה: {error}",
-  "@interventionCloseError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionModeSleepTitle": "הכנה לשינה",
-  "interventionModeCalmTitle": "ייצוב",
-  "interventionModeFocusTitle": "מיקוד",
-  "interventionModeRecoveryTitle": "התאוששות",
-  "interventionModeTrustedContactTitle": "איש קשר מהימן",
-  "interventionQuickAccessSubtitle": "גישה מהירה",
-  "interventionSummaryGeneric": "הפורמט הזה נבחר לפי המצב הנוכחי שלך.",
-  "interventionSummaryTrustedContact": "גישה מהירה לאיש קשר מהימן.",
-  "interventionDurationMinutesLabel": "{minutes} דק׳ • {title}",
-  "@interventionDurationMinutesLabel": {
-    "placeholders": {
-      "minutes": {},
-      "title": {}
-    }
-  },
-  "interventionRecommendedFastRecovery": "מומלצת התאוששות מהירה",
-  "interventionRecommendedFormatForState": "הפורמט הזה נבחר לפי המצב הנוכחי שלך.",
-  "homeInterventionRecommendationTitle": "בהתאם למצב הנוכחי שלך מומלץ סשן תמיכה קצר.",
-  "homeInterventionRecommendationTapHint": "הקישו כדי לפתוח.",
-  "interventionRecommendationScreenTitle": "המלצה",
-  "interventionFastRecoveryRecommended": "מומלצת התאוששות מהירה",
-  "interventionFormatSelectedForState": "הפורמט הזה נבחר לפי המצב הנוכחי שלך.",
-  "interventionStartSession": "התחל סשן",
-  "interventionActiveSessionTitle": "סשן פעיל",
-  "interventionSessionCardTitle": "סשן",
-  "interventionSessionActive": "הסשן פעיל",
-  "interventionCompleting": "מסיים...",
-  "interventionCompleteCta": "סיים סשן",
-  "interventionStartCta": "התחל סשן"
+  }
+
 }

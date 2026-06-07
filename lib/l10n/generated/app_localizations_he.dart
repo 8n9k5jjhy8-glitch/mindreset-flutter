@@ -1034,4 +1034,161 @@ class AppLocalizationsHe extends AppLocalizations {
   String historyHoursMinutesShort(int hours, int minutes) {
     return '$hours ש׳ $minutes דק׳';
   }
+
+  @override
+  String get interventionSessionLabel => 'סשן';
+
+  @override
+  String get interventionStart => 'התחל סשן';
+
+  @override
+  String get interventionStarting => 'מתחיל...';
+
+  @override
+  String get interventionClose => 'סגור';
+
+  @override
+  String get interventionRecommendationTitle => 'המלצה';
+
+  @override
+  String get interventionCancelAndReturn => 'בטל וחזור';
+
+  @override
+  String interventionTrustedContactLoadError(Object error) {
+    return 'טעינת איש הקשר המהימן נכשלה: $error';
+  }
+
+  @override
+  String get interventionTrustedContactSaved => 'איש הקשר המהימן נשמר';
+
+  @override
+  String interventionTrustedContactSaveError(Object error) {
+    return 'שמירת איש הקשר המהימן נכשלה: $error';
+  }
+
+  @override
+  String get interventionTrustedContactRemoved => 'איש הקשר המהימן הוסר';
+
+  @override
+  String interventionTrustedContactRemoveError(Object error) {
+    return 'הסרת איש הקשר המהימן נכשלה: $error';
+  }
+
+  @override
+  String get interventionPhoneCallError => 'לא ניתן היה להתחיל שיחת טלפון.';
+
+  @override
+  String get interventionSmsOpenError =>
+      'לא ניתן היה לפתוח את אפליקציית ההודעות.';
+
+  @override
+  String interventionTrustedContactSmsBody(Object name) {
+    return 'היי $name, ייתכן שאני צריך עכשיו תמיכה. אפשר ליצור איתי קשר כשתוכל?';
+  }
+
+  @override
+  String get interventionStartError => 'לא ניתן היה להתחיל את הסשן. נסה שוב.';
+
+  @override
+  String interventionStartErrorWithDetails(Object error) {
+    return 'לא ניתן היה להתחיל את הסשן: $error';
+  }
+
+  @override
+  String get interventionMissingSessionId => 'מזהה הסשן חסר. פתח את הסשן מחדש.';
+
+  @override
+  String interventionStartedMessage(Object title) {
+    return 'הסשן התחיל: $title';
+  }
+
+  @override
+  String interventionCompletedMessage(Object title) {
+    return 'הסשן הושלם: $title';
+  }
+
+  @override
+  String interventionCompleteError(Object error) {
+    return 'לא ניתן היה להשלים את הסשן: $error';
+  }
+
+  @override
+  String interventionCloseError(Object error) {
+    return 'לא ניתן היה לסגור את הסשן בבטחה: $error';
+  }
+
+  @override
+  String get interventionModeSleepTitle => 'הכנה לשינה';
+
+  @override
+  String get interventionModeCalmTitle => 'ייצוב';
+
+  @override
+  String get interventionModeFocusTitle => 'מיקוד';
+
+  @override
+  String get interventionModeRecoveryTitle => 'התאוששות';
+
+  @override
+  String get interventionModeTrustedContactTitle => 'איש קשר מהימן';
+
+  @override
+  String get interventionQuickAccessSubtitle => 'גישה מהירה';
+
+  @override
+  String get interventionSummaryGeneric =>
+      'הפורמט הזה נבחר לפי המצב הנוכחי שלך.';
+
+  @override
+  String get interventionSummaryTrustedContact => 'גישה מהירה לאיש קשר מהימן.';
+
+  @override
+  String interventionDurationMinutesLabel(Object minutes, Object title) {
+    return '$minutes דק׳ • $title';
+  }
+
+  @override
+  String get interventionRecommendedFastRecovery => 'מומלצת התאוששות מהירה';
+
+  @override
+  String get interventionRecommendedFormatForState =>
+      'הפורמט הזה נבחר לפי המצב הנוכחי שלך.';
+
+  @override
+  String get homeInterventionRecommendationTitle =>
+      'בהתאם למצב הנוכחי שלך מומלץ סשן תמיכה קצר.';
+
+  @override
+  String get homeInterventionRecommendationTapHint => 'הקישו כדי לפתוח.';
+
+  @override
+  String get interventionRecommendationScreenTitle => 'המלצה';
+
+  @override
+  String get interventionFastRecoveryRecommended => 'מומלצת התאוששות מהירה';
+
+  @override
+  String get interventionFormatSelectedForState =>
+      'הפורמט הזה נבחר לפי המצב הנוכחי שלך.';
+
+  @override
+  String get interventionStartSession => 'התחל סשן';
+
+  @override
+  String get interventionActiveSessionTitle => 'סשן פעיל';
+
+  @override
+  String get interventionSessionCardTitle => 'סשן';
+
+  @override
+  String get interventionSessionActive => 'הסשן פעיל';
+
+  @override
+  String get interventionCompleting => 'מסיים...';
+
+  @override
+  String get interventionCompleteCta => 'סיים סשן';
+
+  @override
+  String get interventionStartCta => 'התחל סשן';
 }

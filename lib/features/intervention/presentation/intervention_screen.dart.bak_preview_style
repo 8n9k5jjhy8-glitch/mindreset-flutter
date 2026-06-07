@@ -1,14 +1,10 @@
-import '../../../../app/router.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../profile/data/profile_service.dart';
 import '../../profile/domain/user_context.dart';
 import '../data/repositories/sessions_repository.dart';
-import '../domain/session_mode_key.dart';
 
 class InterventionScreen extends StatefulWidget {
   const InterventionScreen({
@@ -41,10 +37,9 @@ class _InterventionScreenState extends State<InterventionScreen> {
   bool sessionCompleted = false;
   bool sessionCancelled = false;
 
-  late String _runtimeSessionId;
-  late bool _isPreviewRuntime;
-
-  bool get isPreview => _isPreviewRuntime;
+  bool get isPreview =>
+      widget.arguments['isPreview'] == true ||
+      widget.arguments['status']?.toString().trim().toLowerCase() == 'preview';
 
   TrustedContactData? trustedContact;
   final trustedContactFormKey = GlobalKey<FormState>();
@@ -55,15 +50,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        loadTrustedContact();
-      }
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {}
-    });
-
     sessionsRepository = widget.sessionsRepository ?? SessionsRepository();
     vm = InterventionViewModel.fromArguments(
       widget.arguments,
@@ -73,12 +59,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
     final initialStatus =
         widget.arguments['status']?.toString().trim().toLowerCase();
 
-    _runtimeSessionId = vm.sessionId;
-    _isPreviewRuntime =
-        widget.arguments['isPreview'] == true || initialStatus == 'preview';
-
-    if (!isPreview &&
-        (initialStatus == 'started' || initialStatus == 'inprogress')) {
+    if (!isPreview && (initialStatus == 'started' || initialStatus == 'inprogress')) {
       sessionStarted = true;
     }
     if (!isPreview && initialStatus == 'completed') {
@@ -90,9 +71,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
     }
 
     if (vm.isTrustedContact) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {}
-      });
+      loadTrustedContact();
     }
   }
 
@@ -105,7 +84,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> loadTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     setState(() => isLoadingTrustedContact = true);
     try {
       final result = await profileService.fetchTrustedContact();
@@ -120,7 +98,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionTrustedContactLoadError(e.toString())),
+          content: Text('Failed to load trusted contact: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -133,7 +111,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> saveTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     final form = trustedContactFormKey.currentState;
     if (form == null || !form.validate()) return;
 
@@ -150,7 +127,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       if (!sessionCompleted && !sessionCancelled && vm.sessionId.isNotEmpty) {
         await sessionsRepository.updateSessionStatus(
-          sessionId: _runtimeSessionId,
+          sessionId: vm.sessionId,
           status: 'completed',
         );
         sessionStarted = true;
@@ -159,8 +136,8 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.interventionTrustedContactSaved),
+        const SnackBar(
+          content: Text('Trusted contact saved'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -168,7 +145,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionTrustedContactSaveError(e.toString())),
+          content: Text('Failed to save trusted contact: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -181,7 +158,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> removeTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     setState(() => isRemovingTrustedContact = true);
     try {
       await profileService.clearTrustedContact();
@@ -203,9 +179,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.interventionTrustedContactRemoveError(e.toString()),
-          ),
+          content: Text('Failed to remove trusted contact: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -218,18 +192,16 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> callTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     final contact = trustedContact;
     if (contact == null) return;
     final uri = Uri(scheme: 'tel', path: contact.phone.trim());
     await launchExternalUri(
       uri,
-      failureMessage: l10n.interventionPhoneCallError,
+      failureMessage: 'Could not start a phone call.',
     );
   }
 
   Future<void> smsTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     final contact = trustedContact;
     if (contact == null) return;
 
@@ -242,7 +214,10 @@ class _InterventionScreenState extends State<InterventionScreen> {
       },
     );
 
-    await launchExternalUri(uri, failureMessage: l10n.interventionSmsOpenError);
+    await launchExternalUri(
+      uri,
+      failureMessage: 'Could not open the messaging app.',
+    );
   }
 
   Future<void> launchExternalUri(
@@ -275,16 +250,14 @@ class _InterventionScreenState extends State<InterventionScreen> {
     }
   }
 
-  bool get canManageSession =>
-      !vm.isTrustedContact && _runtimeSessionId.trim().isNotEmpty;
+  bool get canManageSession => !vm.isTrustedContact && vm.sessionId.trim().isNotEmpty;
 
   Future<void> startPreviewSession() async {
     if (isStarting || !isPreview) return;
 
-    final source =
-        widget.arguments['source']?.toString().trim().isNotEmpty == true
-            ? widget.arguments['source'].toString().trim()
-            : 'ai_recommendation';
+    final source = widget.arguments['source']?.toString().trim().isNotEmpty == true
+        ? widget.arguments['source'].toString().trim()
+        : 'ai_recommendation';
 
     setState(() => isStarting = true);
 
@@ -292,14 +265,10 @@ class _InterventionScreenState extends State<InterventionScreen> {
       final sessionId = await sessionsRepository.createSession(
         modeKey: vm.sessionType,
         modeTitle: vm.title,
-        stressLevel:
-            int.tryParse(widget.arguments['stressLevel']?.toString() ?? '') ??
-            1,
-        stressTitle:
-            widget.arguments['stressTitle']?.toString().trim().isNotEmpty ==
-                    true
-                ? widget.arguments['stressTitle'].toString().trim()
-                : 'Unknown',
+        stressLevel: int.tryParse(widget.arguments['stressLevel']?.toString() ?? '') ?? 1,
+        stressTitle: widget.arguments['stressTitle']?.toString().trim().isNotEmpty == true
+            ? widget.arguments['stressTitle'].toString().trim()
+            : 'Unknown',
         source: source,
         status: 'started',
       );
@@ -318,19 +287,11 @@ class _InterventionScreenState extends State<InterventionScreen> {
         return;
       }
 
-      context.pushReplacement(
-        AppRoutes.intervention,
-        extra: {
-          ...widget.arguments,
-          'sessionId': sessionId,
-          'isPreview': false,
-          'status': 'started',
-          'modeKey': vm.sessionType,
-          'modeTitle': vm.title,
-          'title': vm.title,
-          'sessionType': vm.sessionType,
-        },
-      );
+      setState(() {
+        sessionStarted = true;
+        sessionCompleted = false;
+        isStarting = false;
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -347,7 +308,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> startSession() async {
-    final l10n = AppLocalizations.of(context)!;
     if (vm.isTrustedContact) {
       if (trustedContact != null) {
         await callTrustedContact();
@@ -361,9 +321,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Session ID is missing. Please reopen this session.',
-          ),
+          content: const Text('Session ID is missing. Please reopen this session.'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -377,7 +335,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
     try {
       await sessionsRepository.updateSessionStatus(
-        sessionId: _runtimeSessionId,
+        sessionId: vm.sessionId,
         status: 'started',
       );
 
@@ -391,7 +349,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionStartedMessage(vm.title)),
+          content: Text('Session started: ${vm.title}'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -399,7 +357,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionStartErrorWithDetails(e.toString())),
+          content: Text('Failed to start session: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -412,7 +370,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> completeSession() async {
-    final l10n = AppLocalizations.of(context)!;
     if (vm.isTrustedContact) {
       Navigator.of(context).maybePop();
       return;
@@ -422,9 +379,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Session ID is missing. Please reopen this session.',
-          ),
+          content: const Text('Session ID is missing. Please reopen this session.'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -438,7 +393,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
     try {
       await sessionsRepository.updateSessionStatus(
-        sessionId: _runtimeSessionId,
+        sessionId: vm.sessionId,
         status: 'completed',
       );
 
@@ -452,7 +407,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionCompletedMessage(vm.title)),
+          content: Text('Session completed: ${vm.title}'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -462,7 +417,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionCompleteError(e.toString())),
+          content: Text('Failed to complete session: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -479,7 +434,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
     if (!sessionStarted || sessionCompleted || sessionCancelled) return;
 
     await sessionsRepository.updateSessionStatus(
-      sessionId: _runtimeSessionId,
+      sessionId: vm.sessionId,
       status: 'cancelled',
     );
     sessionCancelled = true;
@@ -522,9 +477,8 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     if (isPreview && !vm.isTrustedContact) {
-      return _buildRecommendationPreview(context, l10n);
+      return _buildRecommendationPreview(context);
     }
 
     return Scaffold(
@@ -534,14 +488,13 @@ class _InterventionScreenState extends State<InterventionScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon:
-              isCancellingBeforeClose
-                  ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2.2),
-                  )
-                  : const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: isCancellingBeforeClose
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                )
+              : const Icon(Icons.arrow_back_ios_new_rounded),
           color: AppColors.textPrimary,
           onPressed: isCancellingBeforeClose ? null : handleClose,
         ),
@@ -568,55 +521,16 @@ class _InterventionScreenState extends State<InterventionScreen> {
             const SizedBox(height: 16),
             _SimpleInfoCard(
               color: AppColors.surface,
-              title: l10n.interventionSessionCardTitle,
-              subtitle: vm.subtitle,
+              title: 'Сессия',
+              subtitle: '${vm.durationMinutes} минут • ${vm.subtitle}',
               icon: Icons.play_circle_fill_rounded,
               iconColor: AppColors.primary,
             ),
             const SizedBox(height: 16),
-            if (sessionStarted && !sessionCompleted && !sessionCancelled) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F1E4),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF5D7E57),
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      l10n.interventionSessionActive,
-                      style: TextStyle(
-                        color: Color(0xFF5D7E57),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed:
-                    isStarting || isCompleting
-                        ? null
-                        : (sessionStarted &&
-                            !sessionCompleted &&
-                            !sessionCancelled)
-                        ? completeSession
-                        : startSession,
+                onPressed: isStarting ? null : startSession,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -626,33 +540,18 @@ class _InterventionScreenState extends State<InterventionScreen> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                 ),
-                icon:
-                    (isStarting || isCompleting)
-                        ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        )
-                        : Icon(
-                          (sessionStarted &&
-                                  !sessionCompleted &&
-                                  !sessionCancelled)
-                              ? Icons.check_rounded
-                              : Icons.play_arrow_rounded,
+                icon: isStarting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
                         ),
+                      )
+                    : const Icon(Icons.play_arrow_rounded),
                 label: Text(
-                  isStarting
-                      ? l10n.interventionStarting
-                      : isCompleting
-                      ? l10n.interventionCompleting
-                      : (sessionStarted &&
-                          !sessionCompleted &&
-                          !sessionCancelled)
-                      ? l10n.interventionCompleteCta
-                      : l10n.interventionStartCta,
+                  isStarting ? 'Запуск...' : 'Начать сеанс',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -674,8 +573,8 @@ class _InterventionScreenState extends State<InterventionScreen> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                 ),
-                child: Text(
-                  l10n.cancel,
+                child: const Text(
+                  'Закрыть',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
@@ -690,15 +589,10 @@ class _InterventionScreenState extends State<InterventionScreen> {
     );
   }
 
-  Scaffold _buildRecommendationPreview(
-    BuildContext context,
-    AppLocalizations l10n,
-  ) {
+  Scaffold _buildRecommendationPreview(BuildContext context) {
+    const previewDuration = 10;
+    const previewTypeLabel = 'Восстановление';
     const previewFlowerAsset = 'assets/images/flower_mild.png';
-    final previewActionTitle = l10n.interventionDurationMinutesLabel(
-      vm.durationMinutes,
-      vm.title,
-    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
@@ -711,9 +605,9 @@ class _InterventionScreenState extends State<InterventionScreen> {
           color: AppColors.textPrimary,
           onPressed: handleClose,
         ),
-        title: Text(
-          l10n.interventionRecommendationScreenTitle,
-          style: const TextStyle(
+        title: const Text(
+          'Рекомендация',
+          style: TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: 24,
@@ -724,17 +618,13 @@ class _InterventionScreenState extends State<InterventionScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: ListView(
-            padding: EdgeInsets.zero,
+          child: Column(
             children: [
-              _FixedRecoveryHeroCard(title: vm.title, subtitle: vm.summaryText),
+              const _FixedRecoveryHeroCard(),
               const SizedBox(height: 18),
               _RecommendationActionCard(
-                title: previewActionTitle,
-                buttonText:
-                    isStarting
-                        ? l10n.interventionStarting
-                        : l10n.interventionStartSession,
+                title: '$previewDuration минут • $previewTypeLabel',
+                buttonText: isStarting ? 'Запуск...' : 'Начать сеанс',
                 onStart: isStarting ? null : startPreviewSession,
                 isLoading: isStarting,
               ),
@@ -749,10 +639,10 @@ class _InterventionScreenState extends State<InterventionScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  child: Text(
-                    l10n.interventionCancelAndReturn,
+                  child: const Text(
+                    'Отменить и вернуться',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF667E6E),
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
@@ -760,22 +650,22 @@ class _InterventionScreenState extends State<InterventionScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: 376,
-                height: 376,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: Image.asset(previewFlowerAsset),
-                ),
+              const Spacer(),
+              Image.asset(
+                previewFlowerAsset,
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 96),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
     );
   }
+
+
 }
 
 class InterventionViewModel {
@@ -806,26 +696,16 @@ class InterventionViewModel {
     UserContext? userContext,
   }) {
     final rawModeKey =
-        (args['modeKey'] ?? args['sessionType'] ?? args['type'] ?? '')
-            .toString()
-            .trim();
+        (args['modeKey'] ?? args['sessionType'] ?? args['type'] ?? '').toString().trim();
     final rawTitle =
-        (args['title'] ??
-                args['modeTitle'] ??
-                args['sessionTitle'] ??
-                'Intervention')
+        (args['title'] ?? args['modeTitle'] ?? args['sessionTitle'] ?? 'Intervention')
             .toString()
             .trim();
-    final rawSessionId =
-        (args['sessionId'] ?? args['id'] ?? '').toString().trim();
-    final duration =
-        _readInt(
-          args['durationMinutes'] ?? args['duration'] ?? args['minutes'],
-        ) ??
-        10;
+    final rawSessionId = (args['sessionId'] ?? args['id'] ?? '').toString().trim();
+    final duration = _readInt(args['durationMinutes'] ?? args['duration'] ?? args['minutes']) ?? 10;
 
-    final sessionType = normalizeSessionModeKey(rawModeKey);
-    final isTrustedContact = sessionType == 'trusted_contact';
+    final sessionType = _normalizeModeKey(rawModeKey);
+    final isTrustedContact = sessionType == 'trustedcontact';
 
     return InterventionViewModel(
       sessionId: rawSessionId,
@@ -847,21 +727,39 @@ class InterventionViewModel {
     return int.tryParse(value.toString());
   }
 
-  static String _resolveTitle(String rawTitle, String sessionType) {
-    final trimmedTitle = rawTitle.trim();
-    final normalizedRawTitle = trimmedTitle.toLowerCase();
-
-    const blockedTitles = {
-      'intervention',
-      'active session',
-      'session',
-      'active',
-    };
-
-    if (trimmedTitle.isNotEmpty &&
-        !blockedTitles.contains(normalizedRawTitle)) {
-      return trimmedTitle;
+  static String _normalizeModeKey(String value) {
+    final normalized = value.trim().toLowerCase().replaceAll('_', '').replaceAll('-', '');
+    switch (normalized) {
+      case 'calm':
+        return 'calm';
+      case 'energy':
+      case 'needenergy':
+        return 'energy';
+      case 'sleep':
+      case 'sleeppreparation':
+        return 'sleep';
+      case 'focus':
+      case 'wanttofocus':
+        return 'focus';
+      case 'quickreset':
+        return 'quickreset';
+      case 'recovery':
+        return 'recovery';
+      case 'urgenthelp':
+        return 'urgenthelp';
+      case 'softsupport':
+        return 'softsupport';
+      case 'visualcontact':
+        return 'visualcontact';
+      case 'trustedcontact':
+        return 'trustedcontact';
+      default:
+        return 'guided';
     }
+  }
+
+  static String _resolveTitle(String rawTitle, String sessionType) {
+    final normalizedRawTitle = rawTitle.trim().toLowerCase();
 
     if (sessionType == 'sleep') {
       return 'Подготовка ко сну';
@@ -876,11 +774,16 @@ class InterventionViewModel {
     }
 
     if (sessionType == 'energy' ||
+        sessionType == 'quickreset' ||
         sessionType == 'recovery' ||
         normalizedRawTitle.contains('recovery') ||
         normalizedRawTitle.contains('restore') ||
         normalizedRawTitle.contains('восстанов')) {
       return 'Восстановление';
+    }
+
+    if (rawTitle.isNotEmpty && rawTitle != 'Intervention') {
+      return rawTitle;
     }
 
     if (sessionType == 'trustedcontact') {
@@ -892,7 +795,7 @@ class InterventionViewModel {
 
   static String _buildSubtitle(String sessionType, int duration) {
     switch (sessionType) {
-      case 'trusted_contact':
+      case 'trustedcontact':
         return 'Быстрый доступ';
       case 'sleep':
         return '$duration минут • Подготовка ко сну';
@@ -901,28 +804,26 @@ class InterventionViewModel {
       case 'focus':
         return '$duration минут • Фокус';
       case 'energy':
+      case 'quickreset':
       case 'recovery':
       default:
         return '$duration минут • Восстановление';
     }
   }
 
-  static String _buildSummary(
-    String sessionType,
-    int duration,
-    UserContext? userContext,
-  ) {
+  static String _buildSummary(String sessionType, int duration, UserContext? userContext) {
     switch (sessionType) {
       case 'calm':
         return 'Формат подобран под ваше текущее состояние.';
       case 'energy':
+      case 'quickreset':
       case 'recovery':
         return 'Формат подобран под ваше текущее состояние.';
       case 'sleep':
         return 'Формат подобран под ваше текущее состояние.';
       case 'focus':
         return 'Формат подобран под ваше текущее состояние.';
-      case 'trusted_contact':
+      case 'trustedcontact':
         return 'Быстрый доступ к доверенному контакту.';
       default:
         return 'Формат подобран под ваше текущее состояние.';
@@ -937,12 +838,13 @@ class InterventionViewModel {
         return const Color(0xFF8EB7A4);
       case 'focus':
         return const Color(0xFFD7C3A5);
-      case 'trusted_contact':
+      case 'trustedcontact':
         return const Color(0xFFA17456);
       case 'energy':
+      case 'quickreset':
       case 'recovery':
       default:
-        return const Color(0xFFDCC7A1);
+        return const Color(0xFFF3D68A);
     }
   }
 
@@ -952,11 +854,12 @@ class InterventionViewModel {
         return Icons.favorite_rounded;
       case 'calm':
       case 'energy':
+      case 'quickreset':
       case 'recovery':
         return Icons.self_improvement_rounded;
       case 'focus':
         return Icons.center_focus_strong_rounded;
-      case 'trusted_contact':
+      case 'trustedcontact':
         return Icons.phone_in_talk_rounded;
       default:
         return Icons.self_improvement_rounded;
@@ -964,11 +867,9 @@ class InterventionViewModel {
   }
 }
 
-class _FixedRecoveryHeroCard extends StatelessWidget {
-  const _FixedRecoveryHeroCard({required this.title, required this.subtitle});
 
-  final String title;
-  final String subtitle;
+class _FixedRecoveryHeroCard extends StatelessWidget {
+  const _FixedRecoveryHeroCard();
 
   @override
   Widget build(BuildContext context) {
@@ -977,21 +878,13 @@ class _FixedRecoveryHeroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.white.withValues(alpha: 0.96),
-            accentColor.withValues(alpha: 0.22),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: accentColor,
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(alpha: 0.24),
-            blurRadius: 30,
-            offset: const Offset(0, 16),
+            color: accentColor.withValues(alpha: 0.28),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -1002,50 +895,40 @@ class _FixedRecoveryHeroCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 76,
-                height: 76,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: accentColor.withValues(alpha: 0.22),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Icon(
                   Icons.self_improvement_rounded,
-                  color: Color(0xFF6C7F73),
-                  size: 38,
+                  color: Colors.white,
+                  size: 34,
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(
+              const Expanded(
                 child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFF5F7167),
-                    fontSize: 18,
-                    height: 1.0,
+                  'Рекомендуется быстрое\nвосстановление',
+                  style: TextStyle(
+                    color: Color(0xFF9AA79A),
+                    fontSize: 19,
+                    height: 1.02,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Color(0xFF91A095),
-              fontSize: 14,
-              height: 1.18,
-              fontWeight: FontWeight.w700,
+          const SizedBox(height: 18),
+          const Text(
+            'Формат подобран под ваше текущее состояние',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -1053,6 +936,7 @@ class _FixedRecoveryHeroCard extends StatelessWidget {
     );
   }
 }
+
 
 class _RecommendationActionCard extends StatelessWidget {
   const _RecommendationActionCard({
@@ -1081,11 +965,10 @@ class _RecommendationActionCard extends StatelessWidget {
         children: [
           Text(
             title,
-            maxLines: 1,
             style: const TextStyle(
-              color: Color(0xFF5D7066),
-              fontSize: 17,
-              height: 1.0,
+              color: Color(0xFF67806F),
+              fontSize: 24,
+              height: 1.05,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -1103,23 +986,22 @@ class _RecommendationActionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(22),
                 ),
               ),
-              child:
-                  isLoading
-                      ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
-                        ),
-                      )
-                      : Text(
-                        buttonText,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.white,
                       ),
+                    )
+                  : Text(
+                      buttonText,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
           ),
         ],

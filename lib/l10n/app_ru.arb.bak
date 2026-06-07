@@ -362,6 +362,7 @@
   "myStateNowTitle": "МОЁ СОСТОЯНИЕ СЕЙЧАС",
   "stateUpdatesFromBiometrics": "Состояние обновляется автоматически на основе биометрии.",
   "professionProfileHelper": "Выбери свой контекст жизни, чтобы рекомендации были точнее и полезнее.",
+
   "historySummaryTitle": "Краткая сводка",
   "historySummarySubtitle": "Показывает, какие режимы ты реально запускаешь и к каким возвращаешься чаще.",
   "historySummaryLaunches": "Запусков",
@@ -503,100 +504,6 @@
         "type": "int"
       }
     }
-  },
-  "interventionSessionLabel": "Сессия",
-  "interventionStart": "Начать сеанс",
-  "interventionStarting": "Запуск...",
-  "interventionClose": "Закрыть",
-  "interventionRecommendationTitle": "Рекомендация",
-  "interventionCancelAndReturn": "Отменить и вернуться",
-  "interventionTrustedContactLoadError": "Не удалось загрузить доверенный контакт: {error}",
-  "@interventionTrustedContactLoadError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionTrustedContactSaved": "Доверенный контакт сохранён",
-  "interventionTrustedContactSaveError": "Не удалось сохранить доверенный контакт: {error}",
-  "@interventionTrustedContactSaveError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionTrustedContactRemoved": "Доверенный контакт удалён",
-  "interventionTrustedContactRemoveError": "Не удалось удалить доверенный контакт: {error}",
-  "@interventionTrustedContactRemoveError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionPhoneCallError": "Не удалось начать звонок.",
-  "interventionSmsOpenError": "Не удалось открыть приложение сообщений.",
-  "interventionTrustedContactSmsBody": "Привет, {name}, мне сейчас может понадобиться поддержка. Пожалуйста, свяжись со мной, когда сможешь.",
-  "@interventionTrustedContactSmsBody": {
-    "placeholders": {
-      "name": {}
-    }
-  },
-  "interventionStartError": "Не удалось начать сессию. Попробуй ещё раз.",
-  "interventionStartErrorWithDetails": "Не удалось начать сессию: {error}",
-  "@interventionStartErrorWithDetails": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionMissingSessionId": "Идентификатор сессии отсутствует. Пожалуйста, открой эту сессию заново.",
-  "interventionStartedMessage": "Сессия начата: {title}",
-  "@interventionStartedMessage": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "interventionCompletedMessage": "Сессия завершена: {title}",
-  "@interventionCompletedMessage": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "interventionCompleteError": "Не удалось завершить сессию: {error}",
-  "@interventionCompleteError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionCloseError": "Не удалось безопасно закрыть сессию: {error}",
-  "@interventionCloseError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionModeSleepTitle": "Подготовка ко сну",
-  "interventionModeCalmTitle": "Стабилизация",
-  "interventionModeFocusTitle": "Фокус",
-  "interventionModeRecoveryTitle": "Восстановление",
-  "interventionModeTrustedContactTitle": "Доверенный контакт",
-  "interventionQuickAccessSubtitle": "Быстрый доступ",
-  "interventionSummaryGeneric": "Формат подобран под ваше текущее состояние.",
-  "interventionSummaryTrustedContact": "Быстрый доступ к доверенному контакту.",
-  "interventionDurationMinutesLabel": "{minutes} минут • {title}",
-  "@interventionDurationMinutesLabel": {
-    "placeholders": {
-      "minutes": {},
-      "title": {}
-    }
-  },
-  "interventionRecommendedFastRecovery": "Рекомендуется быстрое восстановление",
-  "interventionRecommendedFormatForState": "Формат подобран под ваше текущее состояние",
-  "homeInterventionRecommendationTitle": "На основе анализа вашего состояния рекомендуется короткая сессия помощи.",
-  "homeInterventionRecommendationTapHint": "Нажмите, чтобы открыть.",
-  "interventionRecommendationScreenTitle": "Рекомендация",
-  "interventionFastRecoveryRecommended": "Рекомендуется быстрое восстановление",
-  "interventionFormatSelectedForState": "Формат подобран под ваше текущее состояние.",
-  "interventionStartSession": "Начать сеанс",
-  "interventionActiveSessionTitle": "Активная сессия",
-  "interventionSessionCardTitle": "Сессия",
-  "interventionSessionActive": "Сеанс активен",
-  "interventionCompleting": "Завершение...",
-  "interventionCompleteCta": "Завершить сеанс",
-  "interventionStartCta": "Начать сеанс"
+  }
+
 }

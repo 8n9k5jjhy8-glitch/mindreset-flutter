@@ -99,20 +99,32 @@ class SessionsRepository {
     required String status,
     String? note,
   }) async {
+    final user = _user;
+    if (user == null) {
+      throw StateError('User is not authenticated');
+    }
+
     await _client
         .from('sessions')
         .update({'status': status, if (note != null) 'note': note})
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('user_id', user.id);
   }
 
   Future<void> saveUserNote({
     required String sessionId,
     required String userNote,
   }) async {
+    final user = _user;
+    if (user == null) {
+      throw StateError('User is not authenticated');
+    }
+
     await _client
         .from('sessions')
         .update({'user_note': userNote})
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('user_id', user.id);
   }
 
   Future<void> saveSessionResult({
@@ -120,10 +132,16 @@ class SessionsRepository {
     required String resultNote,
     required String resultRating,
   }) async {
+    final user = _user;
+    if (user == null) {
+      throw StateError('User is not authenticated');
+    }
+
     await _client
         .from('sessions')
         .update({'result_note': resultNote, 'result_rating': resultRating})
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('user_id', user.id);
   }
 
   Future<String?> fetchTopHelpfulModeTitle() async {

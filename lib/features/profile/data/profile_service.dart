@@ -34,11 +34,8 @@ class ProfileService {
     final user = _client.auth.currentUser;
     if (user == null) return null;
 
-    final data = await _client
-        .from('profiles')
-        .select()
-        .eq('id', user.id)
-        .maybeSingle();
+    final data =
+        await _client.from('profiles').select().eq('id', user.id).maybeSingle();
 
     if (data == null) return null;
     return Profile.fromMap(Map<String, dynamic>.from(data));
@@ -54,12 +51,13 @@ class ProfileService {
       throw StateError('Нет активной сессии');
     }
 
-    final updated = await _client
-        .from('profiles')
-        .update({'name': name.trim()})
-        .eq('id', user.id)
-        .select()
-        .single();
+    final updated =
+        await _client
+            .from('profiles')
+            .update({'name': name.trim()})
+            .eq('id', user.id)
+            .select()
+            .single();
 
     return Profile.fromMap(Map<String, dynamic>.from(updated));
   }
@@ -70,12 +68,13 @@ class ProfileService {
       throw StateError('Нет активной сессии');
     }
 
-    final updated = await _client
-        .from('profiles')
-        .update({'avatar_url': avatarUrl.trim()})
-        .eq('id', user.id)
-        .select()
-        .single();
+    final updated =
+        await _client
+            .from('profiles')
+            .update({'avatar_url': avatarUrl.trim()})
+            .eq('id', user.id)
+            .select()
+            .single();
 
     return Profile.fromMap(Map<String, dynamic>.from(updated));
   }
@@ -84,11 +83,12 @@ class ProfileService {
     final user = _client.auth.currentUser;
     if (user == null) return null;
 
-    final data = await _client
-        .from('profiles')
-        .select('profession_profile')
-        .eq('id', user.id)
-        .maybeSingle();
+    final data =
+        await _client
+            .from('profiles')
+            .select('profession_profile')
+            .eq('id', user.id)
+            .maybeSingle();
 
     if (data == null) return null;
     return data['profession_profile'] as String?;
@@ -100,14 +100,15 @@ class ProfileService {
       throw StateError('Нет активной сессии');
     }
 
-    final updated = await _client
-        .from('profiles')
-        .upsert({
-          'id': user.id,
-          'profession_profile': professionProfile.trim(),
-        })
-        .select()
-        .single();
+    final updated =
+        await _client
+            .from('profiles')
+            .upsert({
+              'id': user.id,
+              'profession_profile': professionProfile.trim(),
+            })
+            .select()
+            .single();
 
     return Profile.fromMap(Map<String, dynamic>.from(updated));
   }
@@ -182,26 +183,17 @@ class ProfileService {
       'crisis_plan_enabled': crisisPlanEnabled,
     };
 
-    debugPrint(
-      'PROFILE SAVE payload=$updateData',
-    );
+    debugPrint('PROFILE SAVE payload=$updateData');
 
     try {
-      final updated = await _client
-          .from('profiles')
-          .upsert(updateData)
-          .select()
-          .single();
+      final updated =
+          await _client.from('profiles').upsert(updateData).select().single();
 
-      debugPrint(
-        'PROFILE SAVE success',
-        );
+      debugPrint('PROFILE SAVE success');
 
       return Profile.fromMap(Map<String, dynamic>.from(updated));
-    } catch (e, st) {
-      debugPrint(
-        'PROFILE SAVE failed: $e',
-        );
+    } catch (e) {
+      debugPrint('PROFILE SAVE failed: $e');
       rethrow;
     }
   }
@@ -210,13 +202,14 @@ class ProfileService {
     final user = _client.auth.currentUser;
     if (user == null) return null;
 
-    final data = await _client
-        .from('profiles')
-        .select(
-          'trusted_contact_name, trusted_contact_phone, trusted_contact_note',
-        )
-        .eq('id', user.id)
-        .maybeSingle();
+    final data =
+        await _client
+            .from('profiles')
+            .select(
+              'trusted_contact_name, trusted_contact_phone, trusted_contact_note',
+            )
+            .eq('id', user.id)
+            .maybeSingle();
 
     if (data == null) return null;
 
@@ -250,21 +243,22 @@ class ProfileService {
       throw ArgumentError('Телефон контакта не может быть пустым');
     }
 
-    final updated = await _client
-        .from('profiles')
-        .upsert({
-          'id': user.id,
-          'trusted_contact_name': normalizedName,
-          'trusted_contact_phone': normalizedPhone,
-          'trusted_contact_note':
-              normalizedNote != null && normalizedNote.isNotEmpty
-                  ? normalizedNote
-                  : null,
-        })
-        .select(
-          'trusted_contact_name, trusted_contact_phone, trusted_contact_note',
-        )
-        .single();
+    final updated =
+        await _client
+            .from('profiles')
+            .upsert({
+              'id': user.id,
+              'trusted_contact_name': normalizedName,
+              'trusted_contact_phone': normalizedPhone,
+              'trusted_contact_note':
+                  normalizedNote != null && normalizedNote.isNotEmpty
+                      ? normalizedNote
+                      : null,
+            })
+            .select(
+              'trusted_contact_name, trusted_contact_phone, trusted_contact_note',
+            )
+            .single();
 
     return TrustedContactData.fromMap(Map<String, dynamic>.from(updated));
   }
@@ -275,11 +269,14 @@ class ProfileService {
       throw StateError('Нет активной сессии');
     }
 
-    await _client.from('profiles').update({
-      'trusted_contact_name': null,
-      'trusted_contact_phone': null,
-      'trusted_contact_note': null,
-    }).eq('id', user.id);
+    await _client
+        .from('profiles')
+        .update({
+          'trusted_contact_name': null,
+          'trusted_contact_phone': null,
+          'trusted_contact_note': null,
+        })
+        .eq('id', user.id);
   }
 
   Future<UserContext?> getUserContext() async {
@@ -304,11 +301,8 @@ class ProfileService {
   List<String>? _normalizeStringList(List<String>? values) {
     if (values == null) return null;
 
-    final normalized = values
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toSet()
-        .toList();
+    final normalized =
+        values.map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList();
 
     if (normalized.isEmpty) return <String>[];
     return normalized;

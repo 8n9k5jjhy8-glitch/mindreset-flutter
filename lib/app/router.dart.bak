@@ -6,13 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/presentation/email_confirm_screen.dart';
-import '../features/sessions/presentation/history_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/intervention/presentation/intervention_screen.dart';
 import '../features/modes/presentation/modes_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
-import '../features/state_scenarios/presentation/state_scenario_3_screen.dart';
-import '../features/state_scenarios/presentation/state_scenario_4_screen.dart';
+import '../features/history/presentation/history_screen.dart';
 import '../features/visual_contact/presentation/visual_contact_screen.dart';
 import 'main_shell.dart';
 
@@ -27,8 +25,6 @@ abstract class AppRoutes {
 
   static const intervention = '/intervention';
   static const visualContact = '/visual-contact';
-  static const stateScenario3 = '/state-scenario-3';
-  static const stateScenario4 = '/state-scenario-4';
 }
 
 GoRouter buildAppRouter() {
@@ -85,24 +81,6 @@ GoRouter buildAppRouter() {
           return VisualContactScreen(arguments: args);
         },
       ),
-      GoRoute(
-        path: AppRoutes.stateScenario3,
-        builder: (context, state) {
-          final extra = state.extra;
-          final args =
-              extra is Map<String, dynamic> ? extra : <String, dynamic>{};
-          return StateScenario3Screen(arguments: args);
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.stateScenario4,
-        builder: (context, state) {
-          final extra = state.extra;
-          final args =
-              extra is Map<String, dynamic> ? extra : <String, dynamic>{};
-          return StateScenario4Screen(arguments: args);
-        },
-      ),
       StatefulShellRoute.indexedStack(
         builder:
             (context, state, navigationShell) =>
@@ -147,12 +125,12 @@ GoRouter buildAppRouter() {
 }
 
 class _AuthRefreshNotifier extends ChangeNotifier {
-  _AuthRefreshNotifier(Stream stream) {
+  _AuthRefreshNotifier(Stream<AuthState> stream) {
     notifyListeners();
     _subscription = stream.listen((_) => notifyListeners());
   }
 
-  late final StreamSubscription _subscription;
+  late final StreamSubscription<AuthState> _subscription;
 
   @override
   void dispose() {

@@ -8,7 +8,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../biometrics/data/biometrics_repository.dart';
 import '../../intervention/data/models/session_record.dart';
 import '../../intervention/data/repositories/sessions_repository.dart';
-import '../../intervention/domain/session_mode_key.dart';
 import '../../profile/data/profile_service.dart';
 import '../../profile/domain/user_context.dart';
 import '../domain/state_level.dart';
@@ -196,147 +195,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _openRecommendation({required String source}) async {
     final l10n = AppLocalizations.of(context)!;
     final recommendation = _buildRecommendation(l10n);
-    final payload = _buildRecommendationRoutePayload(
-      source: source,
-      recommendation: recommendation,
-      l10n: l10n,
+
+    await context.push(
+      AppRoutes.intervention,
+      extra: {
+        'modeKey': recommendation.modeKey,
+        'modeTitle': recommendation.modeTitle,
+        'title': recommendation.modeTitle,
+        'sessionType': recommendation.modeKey,
+        'source': source,
+        'stressLevel': _currentLevel.number,
+        'stressTitle': _currentLevel.title(l10n),
+        'status': 'preview',
+        'isPreview': true,
+      },
     );
-
-    debugPrint('[HOME] level=${_currentLevel.number}');
-
-    switch (_currentLevel.number) {
-      case 3:
-        await context.push(AppRoutes.stateScenario3, extra: payload);
-        break;
-      case 4:
-        await context.push(AppRoutes.stateScenario4, extra: payload);
-        break;
-      case 1:
-      case 2:
-      default:
-        await context.push(AppRoutes.intervention, extra: payload);
-        break;
-    }
 
     if (!mounted) return;
     await _loadLatestSession();
-  }
-
-  Map<String, dynamic> _buildRecommendationRoutePayload({
-    required String source,
-    required Recommendation recommendation,
-    required AppLocalizations l10n,
-  }) {
-    final canonicalModeKey = normalizeSessionModeKey(recommendation.modeKey);
-
-    return {
-      'modeKey': canonicalModeKey,
-      'modeTitle': recommendation.modeTitle,
-      'title': recommendation.modeTitle,
-      'sessionType': canonicalModeKey,
-      'selectedModeKey': canonicalModeKey,
-      'selectedModeTitle': recommendation.modeTitle,
-      'source': source,
-      'recommendationSource': source,
-      'stressLevel': _currentLevel.number,
-      'stressTitle': _currentLevel.title(l10n),
-      'stateLevel': _currentLevel.number,
-      'stateTitle': _currentLevel.title(l10n),
-      'stateKey': _stateKeyFromLevel(_currentLevel.number),
-      'routeFamily': _routeFamilyForLevel(_currentLevel.number),
-      'routePriority': _routePriorityForLevel(_currentLevel.number),
-      'supportGoal': _supportGoalForLevel(_currentLevel.number),
-      'decisionType': 'ai_recommended',
-      'entryPoint': 'home',
-      'entryScreen': 'home_screen',
-      'parentScenario': 'state_${_currentLevel.number}',
-      'runtimeVariant': 'state_entry',
-      'status': 'preview',
-      'isPreview': true,
-    };
-  }
-
-  String _stateKeyFromLevel(int level) {
-    switch (level) {
-      case 1:
-        return 'calm';
-      case 2:
-        return 'attention';
-      case 3:
-        return 'elevated_stress';
-      case 4:
-        return 'high_stress';
-      default:
-        return 'attention';
-    }
-  }
-
-  String _routeFamilyForLevel(int level) {
-    switch (level) {
-      case 1:
-        return 'self_regulation';
-      case 2:
-        return 'self_regulation';
-      case 3:
-        return 'recovery';
-      case 4:
-        return 'support_presence';
-      default:
-        return 'self_regulation';
-    }
-  }
-
-  String _routePriorityForLevel(int level) {
-    switch (level) {
-      case 1:
-        return 'soft';
-      case 2:
-        return 'soft';
-      case 3:
-        return 'guided';
-      case 4:
-        return 'protective';
-      default:
-        return 'soft';
-    }
-  }
-
-  String _supportGoalForLevel(int level) {
-    switch (level) {
-      case 1:
-        return 'maintain';
-      case 2:
-        return 'stabilize';
-      case 3:
-        return 'restore';
-      case 4:
-        return 'reduce_isolation';
-      default:
-        return 'stabilize';
-    }
   }
 
   Future<void> _resumeActiveSession() async {
     final session = _activeSession;
     if (session == null) return;
 
-    final canonicalModeKey = normalizeSessionModeKey(session.modeKey);
-
-    debugPrint('[HOME] resumeActiveSession');
-    debugPrint('[HOME] session.id=${session.id}');
-    debugPrint('[HOME] session.modeKey.raw=${session.modeKey}');
-    debugPrint('[HOME] session.modeKey.canonical=$canonicalModeKey');
-    debugPrint('[HOME] session.status=${session.status}');
-    debugPrint('[HOME] session.source=${session.source}');
-
     await context.push(
       AppRoutes.intervention,
       extra: {
         'sessionId': session.id,
-        'modeKey': canonicalModeKey,
+        'modeKey': session.modeKey,
         'modeTitle': session.modeTitle,
         'title': session.modeTitle,
-        'sessionType': canonicalModeKey,
+        'sessionType': session.modeKey,
         'source': session.source,
         'stressLevel': session.stressLevel,
         'stressTitle': session.stressTitle,

@@ -3,6 +3,7 @@ import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
 
 import '../../intervention/data/models/session_record.dart';
 import '../../intervention/data/repositories/sessions_repository.dart';
+import '../../intervention/domain/session_mode_key.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -32,6 +33,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     try {
       final recent = await _sessionsRepository.fetchRecentSessions(limit: 200);
+      debugPrint('[HISTORY] fetched sessions count=${recent.length}');
+      for (final s in recent.take(20)) {
+        debugPrint(
+          '[HISTORY] id=${s.id} modeKey=${s.modeKey} status=${s.status} source=${s.source}',
+        );
+      }
 
       if (!mounted) return;
 
@@ -50,8 +57,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  static const Set<String> _meaningfulStatuses = {
+    'started',
+    'in_progress',
+    'completed',
+    'cancelled',
+  };
+
   List<SessionRecord> get _meaningfulSessions =>
-      _sessions.where((s) => s.status != 'cancelled').toList();
+      _sessions.where((s) {
+        final status = s.status.trim().toLowerCase();
+        return _meaningfulStatuses.contains(status);
+      }).toList();
 
   List<ModeHistoryGroup> get _groups {
     final Map<String, List<SessionRecord>> grouped = {};
@@ -476,7 +493,12 @@ class _ModeHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      l10n.historyLastState(_localizedStressTitle(context, rawTitle: group.lastStressTitle)),
+                      l10n.historyLastState(
+                        _localizedStressTitle(
+                          context,
+                          rawTitle: group.lastStressTitle,
+                        ),
+                      ),
                       style: const TextStyle(
                         color: Color(0xFF70806E),
                         fontSize: 13,
@@ -494,7 +516,9 @@ class _ModeHistoryCard extends StatelessWidget {
                           foreground: const Color(0xFF657262),
                         ),
                         _MetaPill(
-                          text: l10n.historyCompletedRunsCount(group.completedRuns),
+                          text: l10n.historyCompletedRunsCount(
+                            group.completedRuns,
+                          ),
                           background: const Color(0xFFE4EFE8),
                           foreground: const Color(0xFF4D735E),
                         ),
@@ -505,8 +529,9 @@ class _ModeHistoryCard extends StatelessWidget {
                             foreground: const Color(0xFF9C753B),
                           ),
                         _MetaPill(
-                          text:
-                              l10n.historyLastTime(_formatDateTime(group.lastCreatedAt)),
+                          text: l10n.historyLastTime(
+                            _formatDateTime(group.lastCreatedAt),
+                          ),
                           background: const Color(0xFFF2EFE9),
                           foreground: const Color(0xFF7D786F),
                         ),
@@ -514,7 +539,9 @@ class _ModeHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      l10n.historyCompletionRate(_formatPercent(group.completedRate)),
+                      l10n.historyCompletionRate(
+                        _formatPercent(group.completedRate),
+                      ),
                       style: const TextStyle(
                         color: Color(0xFF8A9386),
                         fontSize: 12,
@@ -524,7 +551,9 @@ class _ModeHistoryCard extends StatelessWidget {
                     if (group.averageDuration != null) ...[
                       const SizedBox(height: 6),
                       Text(
-                        l10n.historyAverageDuration(_formatDuration(context, group.averageDuration!)),
+                        l10n.historyAverageDuration(
+                          _formatDuration(context, group.averageDuration!),
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF8A9386),
                           fontSize: 12,
@@ -593,12 +622,15 @@ class _ModeHistorySheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        l10n.historySheetRunsCompleted(group.totalRuns, group.completedRuns),
+                        l10n.historySheetRunsCompleted(
+                          group.totalRuns,
+                          group.completedRuns,
+                        ),
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF6D756B),
                           fontWeight: FontWeight.w600,
-                        )
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -609,26 +641,30 @@ class _ModeHistorySheet extends StatelessWidget {
                           fontSize: 13,
                           color: Color(0xFF6D756B),
                           fontWeight: FontWeight.w600,
-                        )
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        l10n.historyCompletionRate(_formatPercent(group.completedRate)),
+                        l10n.historyCompletionRate(
+                          _formatPercent(group.completedRate),
+                        ),
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF6D756B),
                           fontWeight: FontWeight.w600,
-                        )
+                        ),
                       ),
                       if (group.averageDuration != null) ...[
                         const SizedBox(height: 6),
                         Text(
-                          l10n.historyAverageDuration(_formatDuration(context, group.averageDuration!)),
+                          l10n.historyAverageDuration(
+                            _formatDuration(context, group.averageDuration!),
+                          ),
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF6D756B),
                             fontWeight: FontWeight.w600,
-                          )
+                          ),
                         ),
                       ],
                     ],
@@ -687,12 +723,14 @@ class _SessionRunTile extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            l10n.historyLastState(_localizedStressTitle(context, rawTitle: session.stressTitle)),
+            l10n.historyLastState(
+              _localizedStressTitle(context, rawTitle: session.stressTitle),
+            ),
             style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF697567),
               fontWeight: FontWeight.w600,
-            )
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -712,7 +750,10 @@ class _SessionRunTile extends StatelessWidget {
                 ),
               if (duration != null)
                 _MetaPill(
-                  text: _durationLabel(context, _formatDuration(context, duration)),
+                  text: _durationLabel(
+                    context,
+                    _formatDuration(context, duration),
+                  ),
                   background: const Color(0xFFF0EEE8),
                   foreground: const Color(0xFF7C776E),
                 ),
@@ -726,7 +767,7 @@ class _SessionRunTile extends StatelessWidget {
                 fontSize: 12,
                 height: 1.4,
                 color: Color(0xFF7A8477),
-              )
+              ),
             ),
           ] else if ((session.note ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -736,7 +777,7 @@ class _SessionRunTile extends StatelessWidget {
                 fontSize: 12,
                 height: 1.4,
                 color: Color(0xFF7A8477),
-              )
+              ),
             ),
           ],
         ],
@@ -846,7 +887,7 @@ class _ErrorCard extends StatelessWidget {
           fontSize: 14,
           color: Color(0xFF8A5F5F),
           height: 1.4,
-        )
+        ),
       ),
     );
   }
@@ -895,11 +936,7 @@ class _HistorySkeleton extends StatelessWidget {
 _StatusUi _statusUi(BuildContext context, String status) {
   final code = Localizations.localeOf(context).languageCode;
 
-  String tr({
-    required String ru,
-    required String en,
-    required String he,
-  }) {
+  String tr({required String ru, required String en, required String he}) {
     switch (code) {
       case 'en':
         return en;
@@ -924,21 +961,13 @@ _StatusUi _statusUi(BuildContext context, String status) {
     case 'started':
     case 'in_progress':
       return _StatusUi(
-        label: tr(
-          ru: 'активно',
-          en: 'active',
-          he: 'פעיל',
-        ),
+        label: tr(ru: 'активно', en: 'active', he: 'פעיל'),
         background: const Color(0xFFE8F1E4),
         foreground: const Color(0xFF5D7E57),
       );
     default:
       return _StatusUi(
-        label: tr(
-          ru: 'без статуса',
-          en: 'no status',
-          he: 'ללא סטטוס',
-        ),
+        label: tr(ru: 'без статуса', en: 'no status', he: 'ללא סטטוס'),
         background: const Color(0xFFEEEFEA),
         foreground: const Color(0xFF727B71),
       );
@@ -985,7 +1014,7 @@ Color _resultForeground(String rating) {
 }
 
 IconData _iconForMode(String modeKey) {
-  switch (modeKey) {
+  switch (normalizeSessionModeKey(modeKey)) {
     case 'calm':
       return Icons.spa_rounded;
     case 'energy':
@@ -1084,7 +1113,6 @@ Duration? _safeDurationFromSession(SessionRecord session) {
 
 String _two(int value) => value.toString().padLeft(2, '0');
 
-
 String _localizedModeTitle(BuildContext context, String modeKey) {
   final l10n = AppLocalizations.of(context)!;
   switch (modeKey.trim().toLowerCase()) {
@@ -1156,16 +1184,24 @@ String _localizedStressTitle(BuildContext context, {required String rawTitle}) {
   final l10n = AppLocalizations.of(context)!;
   final normalized = rawTitle.trim().toLowerCase();
 
-  if (normalized == 'calm' || normalized == 'спокойствие' || normalized == 'רוגע') {
+  if (normalized == 'calm' ||
+      normalized == 'спокойствие' ||
+      normalized == 'רוגע') {
     return l10n.stateCalmTitle;
   }
-  if (normalized == 'tension' || normalized == 'напряжение' || normalized == 'מתח') {
+  if (normalized == 'tension' ||
+      normalized == 'напряжение' ||
+      normalized == 'מתח') {
     return l10n.stateTenseTitle;
   }
-  if (normalized == 'overloaded' || normalized == 'перегрузка' || normalized == 'עומס') {
+  if (normalized == 'overloaded' ||
+      normalized == 'перегрузка' ||
+      normalized == 'עומס') {
     return l10n.stateOverloadedTitle;
   }
-  if (normalized == 'critical' || normalized == 'критическое' || normalized == 'קריטי') {
+  if (normalized == 'critical' ||
+      normalized == 'критическое' ||
+      normalized == 'קריטי') {
     return l10n.stateCriticalTitle;
   }
   if (normalized == 'manual mode selection' ||
@@ -1176,7 +1212,6 @@ String _localizedStressTitle(BuildContext context, {required String rawTitle}) {
 
   return rawTitle;
 }
-
 
 String _durationLabel(BuildContext context, String value) {
   final code = Localizations.localeOf(context).languageCode;
