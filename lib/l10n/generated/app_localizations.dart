@@ -1972,17 +1972,35 @@ abstract class AppLocalizations {
   /// **'{hours} h {minutes} min'**
   String historyHoursMinutesShort(int hours, int minutes);
 
-  /// No description provided for @interventionSessionLabel.
+  /// No description provided for @homeInterventionRecommendationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended intervention'**
+  String get homeInterventionRecommendationTitle;
+
+  /// No description provided for @homeInterventionRecommendationTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open the recommended support mode.'**
+  String get homeInterventionRecommendationTapHint;
+
+  /// No description provided for @interventionRecommendationScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendation'**
+  String get interventionRecommendationScreenTitle;
+
+  /// No description provided for @interventionSessionCardTitle.
   ///
   /// In en, this message translates to:
   /// **'Session'**
-  String get interventionSessionLabel;
+  String get interventionSessionCardTitle;
 
-  /// No description provided for @interventionStart.
+  /// No description provided for @interventionStartSession.
   ///
   /// In en, this message translates to:
   /// **'Start session'**
-  String get interventionStart;
+  String get interventionStartSession;
 
   /// No description provided for @interventionStarting.
   ///
@@ -1996,245 +2014,77 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get interventionClose;
 
-  /// No description provided for @interventionRecommendationTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Recommendation'**
-  String get interventionRecommendationTitle;
-
   /// No description provided for @interventionCancelAndReturn.
   ///
   /// In en, this message translates to:
-  /// **'Cancel and return'**
+  /// **'Cancel and go back'**
   String get interventionCancelAndReturn;
 
-  /// No description provided for @interventionTrustedContactLoadError.
+  /// No description provided for @interventionQuickRecoveryTitle.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load trusted contact: {error}'**
-  String interventionTrustedContactLoadError(Object error);
+  /// **'Recommended quick\nrecovery'**
+  String get interventionQuickRecoveryTitle;
 
-  /// No description provided for @interventionTrustedContactSaved.
+  /// No description provided for @interventionCurrentStateFormat.
   ///
   /// In en, this message translates to:
-  /// **'Trusted contact saved'**
-  String get interventionTrustedContactSaved;
+  /// **'This format is matched to your current state'**
+  String get interventionCurrentStateFormat;
 
-  /// No description provided for @interventionTrustedContactSaveError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to save trusted contact: {error}'**
-  String interventionTrustedContactSaveError(Object error);
-
-  /// No description provided for @interventionTrustedContactRemoved.
-  ///
-  /// In en, this message translates to:
-  /// **'Trusted contact removed'**
-  String get interventionTrustedContactRemoved;
-
-  /// No description provided for @interventionTrustedContactRemoveError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to remove trusted contact: {error}'**
-  String interventionTrustedContactRemoveError(Object error);
-
-  /// No description provided for @interventionPhoneCallError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not start a phone call.'**
-  String get interventionPhoneCallError;
-
-  /// No description provided for @interventionSmsOpenError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not open the messaging app.'**
-  String get interventionSmsOpenError;
-
-  /// No description provided for @interventionTrustedContactSmsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Hi {name}, I may need support right now. Please contact me when you can.'**
-  String interventionTrustedContactSmsBody(Object name);
-
-  /// No description provided for @interventionStartError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to start session. Please try again.'**
-  String get interventionStartError;
-
-  /// No description provided for @interventionStartErrorWithDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to start session: {error}'**
-  String interventionStartErrorWithDetails(Object error);
-
-  /// No description provided for @interventionMissingSessionId.
-  ///
-  /// In en, this message translates to:
-  /// **'Session ID is missing. Please reopen this session.'**
-  String get interventionMissingSessionId;
-
-  /// No description provided for @interventionStartedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Session started: {title}'**
-  String interventionStartedMessage(Object title);
-
-  /// No description provided for @interventionCompletedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Session completed: {title}'**
-  String interventionCompletedMessage(Object title);
-
-  /// No description provided for @interventionCompleteError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to complete session: {error}'**
-  String interventionCompleteError(Object error);
-
-  /// No description provided for @interventionCloseError.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to close session safely: {error}'**
-  String interventionCloseError(Object error);
-
-  /// No description provided for @interventionModeSleepTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sleep preparation'**
-  String get interventionModeSleepTitle;
-
-  /// No description provided for @interventionModeCalmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Stabilization'**
-  String get interventionModeCalmTitle;
-
-  /// No description provided for @interventionModeFocusTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus'**
-  String get interventionModeFocusTitle;
-
-  /// No description provided for @interventionModeRecoveryTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Recovery'**
-  String get interventionModeRecoveryTitle;
-
-  /// No description provided for @interventionModeTrustedContactTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Trusted contact'**
-  String get interventionModeTrustedContactTitle;
-
-  /// No description provided for @interventionQuickAccessSubtitle.
+  /// No description provided for @interventionQuickAccess.
   ///
   /// In en, this message translates to:
   /// **'Quick access'**
-  String get interventionQuickAccessSubtitle;
+  String get interventionQuickAccess;
 
-  /// No description provided for @interventionSummaryGeneric.
+  /// No description provided for @interventionSleepPreparationTitle.
   ///
   /// In en, this message translates to:
-  /// **'This format is selected for your current state.'**
-  String get interventionSummaryGeneric;
+  /// **'Sleep preparation'**
+  String get interventionSleepPreparationTitle;
 
-  /// No description provided for @interventionSummaryTrustedContact.
+  /// No description provided for @interventionCalmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stabilization'**
+  String get interventionCalmTitle;
+
+  /// No description provided for @interventionFocusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get interventionFocusTitle;
+
+  /// No description provided for @interventionRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get interventionRecoveryTitle;
+
+  /// No description provided for @interventionTrustedContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted contact'**
+  String get interventionTrustedContactTitle;
+
+  /// No description provided for @interventionTrustedContactQuickAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick access'**
+  String get interventionTrustedContactQuickAccess;
+
+  /// No description provided for @interventionTrustedContactSummary.
   ///
   /// In en, this message translates to:
   /// **'Quick access to a trusted contact.'**
-  String get interventionSummaryTrustedContact;
+  String get interventionTrustedContactSummary;
 
-  /// No description provided for @interventionDurationMinutesLabel.
+  /// No description provided for @interventionSessionMinutesMeta.
   ///
   /// In en, this message translates to:
-  /// **'{minutes} min • {title}'**
-  String interventionDurationMinutesLabel(Object minutes, Object title);
-
-  /// No description provided for @interventionRecommendedFastRecovery.
-  ///
-  /// In en, this message translates to:
-  /// **'Fast recovery is recommended'**
-  String get interventionRecommendedFastRecovery;
-
-  /// No description provided for @interventionRecommendedFormatForState.
-  ///
-  /// In en, this message translates to:
-  /// **'This format is selected for your current state.'**
-  String get interventionRecommendedFormatForState;
-
-  /// No description provided for @homeInterventionRecommendationTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Based on your current state, a short support session is recommended.'**
-  String get homeInterventionRecommendationTitle;
-
-  /// No description provided for @homeInterventionRecommendationTapHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to open.'**
-  String get homeInterventionRecommendationTapHint;
-
-  /// No description provided for @interventionRecommendationScreenTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Recommendation'**
-  String get interventionRecommendationScreenTitle;
-
-  /// No description provided for @interventionFastRecoveryRecommended.
-  ///
-  /// In en, this message translates to:
-  /// **'Fast recovery is recommended'**
-  String get interventionFastRecoveryRecommended;
-
-  /// No description provided for @interventionFormatSelectedForState.
-  ///
-  /// In en, this message translates to:
-  /// **'This format is selected for your current state.'**
-  String get interventionFormatSelectedForState;
-
-  /// No description provided for @interventionStartSession.
-  ///
-  /// In en, this message translates to:
-  /// **'Start session'**
-  String get interventionStartSession;
-
-  /// No description provided for @interventionActiveSessionTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Active session'**
-  String get interventionActiveSessionTitle;
-
-  /// No description provided for @interventionSessionCardTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Session'**
-  String get interventionSessionCardTitle;
-
-  /// No description provided for @interventionSessionActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Session active'**
-  String get interventionSessionActive;
-
-  /// No description provided for @interventionCompleting.
-  ///
-  /// In en, this message translates to:
-  /// **'Completing...'**
-  String get interventionCompleting;
-
-  /// No description provided for @interventionCompleteCta.
-  ///
-  /// In en, this message translates to:
-  /// **'Complete session'**
-  String get interventionCompleteCta;
-
-  /// No description provided for @interventionStartCta.
-  ///
-  /// In en, this message translates to:
-  /// **'Start session'**
-  String get interventionStartCta;
+  /// **'{minutes} min • {label}'**
+  String interventionSessionMinutesMeta(Object minutes, Object label);
 }
 
 class _AppLocalizationsDelegate

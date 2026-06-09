@@ -1055,10 +1055,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get interventionSessionLabel => 'Session';
+  String get homeInterventionRecommendationTitle => 'Recommended intervention';
 
   @override
-  String get interventionStart => 'Start session';
+  String get homeInterventionRecommendationTapHint =>
+      'Tap to open the recommended support mode.';
+
+  @override
+  String get interventionRecommendationScreenTitle => 'Recommendation';
+
+  @override
+  String get interventionSessionCardTitle => 'Session';
+
+  @override
+  String get interventionStartSession => 'Start session';
 
   @override
   String get interventionStarting => 'Starting...';
@@ -1067,151 +1077,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get interventionClose => 'Close';
 
   @override
-  String get interventionRecommendationTitle => 'Recommendation';
+  String get interventionCancelAndReturn => 'Cancel and go back';
 
   @override
-  String get interventionCancelAndReturn => 'Cancel and return';
+  String get interventionQuickRecoveryTitle => 'Recommended quick\nrecovery';
 
   @override
-  String interventionTrustedContactLoadError(Object error) {
-    return 'Failed to load trusted contact: $error';
-  }
+  String get interventionCurrentStateFormat =>
+      'This format is matched to your current state';
 
   @override
-  String get interventionTrustedContactSaved => 'Trusted contact saved';
+  String get interventionQuickAccess => 'Quick access';
 
   @override
-  String interventionTrustedContactSaveError(Object error) {
-    return 'Failed to save trusted contact: $error';
-  }
+  String get interventionSleepPreparationTitle => 'Sleep preparation';
 
   @override
-  String get interventionTrustedContactRemoved => 'Trusted contact removed';
+  String get interventionCalmTitle => 'Stabilization';
 
   @override
-  String interventionTrustedContactRemoveError(Object error) {
-    return 'Failed to remove trusted contact: $error';
-  }
+  String get interventionFocusTitle => 'Focus';
 
   @override
-  String get interventionPhoneCallError => 'Could not start a phone call.';
+  String get interventionRecoveryTitle => 'Recovery';
 
   @override
-  String get interventionSmsOpenError => 'Could not open the messaging app.';
+  String get interventionTrustedContactTitle => 'Trusted contact';
 
   @override
-  String interventionTrustedContactSmsBody(Object name) {
-    return 'Hi $name, I may need support right now. Please contact me when you can.';
-  }
+  String get interventionTrustedContactQuickAccess => 'Quick access';
 
   @override
-  String get interventionStartError =>
-      'Failed to start session. Please try again.';
-
-  @override
-  String interventionStartErrorWithDetails(Object error) {
-    return 'Failed to start session: $error';
-  }
-
-  @override
-  String get interventionMissingSessionId =>
-      'Session ID is missing. Please reopen this session.';
-
-  @override
-  String interventionStartedMessage(Object title) {
-    return 'Session started: $title';
-  }
-
-  @override
-  String interventionCompletedMessage(Object title) {
-    return 'Session completed: $title';
-  }
-
-  @override
-  String interventionCompleteError(Object error) {
-    return 'Failed to complete session: $error';
-  }
-
-  @override
-  String interventionCloseError(Object error) {
-    return 'Failed to close session safely: $error';
-  }
-
-  @override
-  String get interventionModeSleepTitle => 'Sleep preparation';
-
-  @override
-  String get interventionModeCalmTitle => 'Stabilization';
-
-  @override
-  String get interventionModeFocusTitle => 'Focus';
-
-  @override
-  String get interventionModeRecoveryTitle => 'Recovery';
-
-  @override
-  String get interventionModeTrustedContactTitle => 'Trusted contact';
-
-  @override
-  String get interventionQuickAccessSubtitle => 'Quick access';
-
-  @override
-  String get interventionSummaryGeneric =>
-      'This format is selected for your current state.';
-
-  @override
-  String get interventionSummaryTrustedContact =>
+  String get interventionTrustedContactSummary =>
       'Quick access to a trusted contact.';
 
   @override
-  String interventionDurationMinutesLabel(Object minutes, Object title) {
-    return '$minutes min • $title';
+  String interventionSessionMinutesMeta(Object minutes, Object label) {
+    return '$minutes min • $label';
   }
-
-  @override
-  String get interventionRecommendedFastRecovery =>
-      'Fast recovery is recommended';
-
-  @override
-  String get interventionRecommendedFormatForState =>
-      'This format is selected for your current state.';
-
-  @override
-  String get homeInterventionRecommendationTitle =>
-      'Based on your current state, a short support session is recommended.';
-
-  @override
-  String get homeInterventionRecommendationTapHint => 'Tap to open.';
-
-  @override
-  String get interventionRecommendationScreenTitle => 'Recommendation';
-
-  @override
-  String get interventionFastRecoveryRecommended =>
-      'Fast recovery is recommended';
-
-  @override
-  String get interventionFormatSelectedForState =>
-      'This format is selected for your current state.';
-
-  @override
-  String get interventionStartSession => 'Start session';
-
-  @override
-  String get interventionActiveSessionTitle => 'Active session';
-
-  @override
-  String get interventionSessionCardTitle => 'Session';
-
-  @override
-  String get interventionSessionActive => 'Session active';
-
-  @override
-  String get interventionCompleting => 'Completing...';
-
-  @override
-  String get interventionCompleteCta => 'Complete session';
-
-  @override
-  String get interventionStartCta => 'Start session';
 }
