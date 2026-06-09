@@ -1,24 +1,21 @@
-import '../../../../app/router.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:mindreset_flutter/l10n/generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../profile/data/profile_service.dart';
 import '../../profile/domain/user_context.dart';
 import '../data/repositories/sessions_repository.dart';
-import '../domain/session_mode_key.dart';
 
 class InterventionScreen extends StatefulWidget {
   const InterventionScreen({
     super.key,
-    this.arguments = const <String, dynamic>{},
+    this.arguments = const {},
     this.sessionsRepository,
     this.userContext,
   });
 
-  final Map<String, dynamic> arguments;
+  final Map arguments;
   final SessionsRepository? sessionsRepository;
   final UserContext? userContext;
 
@@ -41,10 +38,9 @@ class _InterventionScreenState extends State<InterventionScreen> {
   bool sessionCompleted = false;
   bool sessionCancelled = false;
 
-  late String _runtimeSessionId;
-  late bool _isPreviewRuntime;
-
-  bool get isPreview => _isPreviewRuntime;
+  bool get isPreview =>
+      widget.arguments['isPreview'] == true ||
+      widget.arguments['status']?.toString().trim().toLowerCase() == 'preview';
 
   TrustedContactData? trustedContact;
   final trustedContactFormKey = GlobalKey<FormState>();
@@ -55,15 +51,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        loadTrustedContact();
-      }
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {}
-    });
-
     sessionsRepository = widget.sessionsRepository ?? SessionsRepository();
     vm = InterventionViewModel.fromArguments(
       widget.arguments,
@@ -73,26 +60,22 @@ class _InterventionScreenState extends State<InterventionScreen> {
     final initialStatus =
         widget.arguments['status']?.toString().trim().toLowerCase();
 
-    _runtimeSessionId = vm.sessionId;
-    _isPreviewRuntime =
-        widget.arguments['isPreview'] == true || initialStatus == 'preview';
-
     if (!isPreview &&
         (initialStatus == 'started' || initialStatus == 'inprogress')) {
       sessionStarted = true;
     }
+
     if (!isPreview && initialStatus == 'completed') {
       sessionStarted = true;
       sessionCompleted = true;
     }
+
     if (!isPreview && initialStatus == 'cancelled') {
       sessionCancelled = true;
     }
 
     if (vm.isTrustedContact) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {}
-      });
+      loadTrustedContact();
     }
   }
 
@@ -105,7 +88,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> loadTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     setState(() => isLoadingTrustedContact = true);
     try {
       final result = await profileService.fetchTrustedContact();
@@ -120,7 +102,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionTrustedContactLoadError(e.toString())),
+          content: Text('Failed to load trusted contact: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -133,7 +115,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> saveTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     final form = trustedContactFormKey.currentState;
     if (form == null || !form.validate()) return;
 
@@ -150,7 +131,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       if (!sessionCompleted && !sessionCancelled && vm.sessionId.isNotEmpty) {
         await sessionsRepository.updateSessionStatus(
-          sessionId: _runtimeSessionId,
+          sessionId: vm.sessionId,
           status: 'completed',
         );
         sessionStarted = true;
@@ -159,8 +140,8 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.interventionTrustedContactSaved),
+        const SnackBar(
+          content: Text('Trusted contact saved'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -168,7 +149,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionTrustedContactSaveError(e.toString())),
+          content: Text('Failed to save trusted contact: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -181,7 +162,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> removeTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     setState(() => isRemovingTrustedContact = true);
     try {
       await profileService.clearTrustedContact();
@@ -203,9 +183,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.interventionTrustedContactRemoveError(e.toString()),
-          ),
+          content: Text('Failed to remove trusted contact: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -218,31 +196,32 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> callTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     final contact = trustedContact;
     if (contact == null) return;
     final uri = Uri(scheme: 'tel', path: contact.phone.trim());
     await launchExternalUri(
       uri,
-      failureMessage: l10n.interventionPhoneCallError,
+      failureMessage: 'Could not start a phone call.',
     );
   }
 
   Future<void> smsTrustedContact() async {
-    final l10n = AppLocalizations.of(context)!;
     final contact = trustedContact;
     if (contact == null) return;
 
     final uri = Uri(
       scheme: 'sms',
       path: contact.phone.trim(),
-      queryParameters: <String, String>{
+      queryParameters: {
         'body':
             'Hi ${contact.name}, I may need support right now. Please contact me when you can.',
       },
     );
 
-    await launchExternalUri(uri, failureMessage: l10n.interventionSmsOpenError);
+    await launchExternalUri(
+      uri,
+      failureMessage: 'Could not open the messaging app.',
+    );
   }
 
   Future<void> launchExternalUri(
@@ -262,6 +241,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
         );
         return;
       }
+
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (!mounted) return;
@@ -276,15 +256,47 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   bool get canManageSession =>
-      !vm.isTrustedContact && _runtimeSessionId.trim().isNotEmpty;
+      !vm.isTrustedContact && vm.sessionId.trim().isNotEmpty;
+
+  String _localizedSessionLabel(BuildContext context, String sessionType) {
+    final l10n = AppLocalizations.of(context)!;
+
+    switch (sessionType) {
+      case 'trustedcontact':
+        return l10n.interventionTrustedContactQuickAccess;
+      case 'sleep':
+        return l10n.interventionSleepPreparationTitle;
+      case 'calm':
+        return l10n.interventionCalmTitle;
+      case 'focus':
+        return l10n.interventionFocusTitle;
+      case 'energy':
+      case 'quickreset':
+      case 'recovery':
+        return l10n.interventionRecoveryTitle;
+      default:
+        return l10n.interventionRecoveryTitle;
+    }
+  }
+
+  String _localizedSummary(BuildContext context, String sessionType) {
+    final l10n = AppLocalizations.of(context)!;
+
+    switch (sessionType) {
+      case 'trustedcontact':
+        return l10n.interventionTrustedContactSummary;
+      default:
+        return l10n.interventionCurrentStateFormat;
+    }
+  }
 
   Future<void> startPreviewSession() async {
     if (isStarting || !isPreview) return;
 
-    final source =
-        widget.arguments['source']?.toString().trim().isNotEmpty == true
-            ? widget.arguments['source'].toString().trim()
-            : 'ai_recommendation';
+    final source = widget.arguments['source']?.toString().trim().isNotEmpty ==
+            true
+        ? widget.arguments['source'].toString().trim()
+        : 'ai_recommendation';
 
     setState(() => isStarting = true);
 
@@ -293,11 +305,9 @@ class _InterventionScreenState extends State<InterventionScreen> {
         modeKey: vm.sessionType,
         modeTitle: vm.title,
         stressLevel:
-            int.tryParse(widget.arguments['stressLevel']?.toString() ?? '') ??
-            1,
+            int.tryParse(widget.arguments['stressLevel']?.toString() ?? '') ?? 1,
         stressTitle:
-            widget.arguments['stressTitle']?.toString().trim().isNotEmpty ==
-                    true
+            widget.arguments['stressTitle']?.toString().trim().isNotEmpty == true
                 ? widget.arguments['stressTitle'].toString().trim()
                 : 'Unknown',
         source: source,
@@ -318,19 +328,11 @@ class _InterventionScreenState extends State<InterventionScreen> {
         return;
       }
 
-      context.pushReplacement(
-        AppRoutes.intervention,
-        extra: {
-          ...widget.arguments,
-          'sessionId': sessionId,
-          'isPreview': false,
-          'status': 'started',
-          'modeKey': vm.sessionType,
-          'modeTitle': vm.title,
-          'title': vm.title,
-          'sessionType': vm.sessionType,
-        },
-      );
+      setState(() {
+        sessionStarted = true;
+        sessionCompleted = false;
+        isStarting = false;
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -347,13 +349,13 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> startSession() async {
-    final l10n = AppLocalizations.of(context)!;
     if (vm.isTrustedContact) {
       if (trustedContact != null) {
         await callTrustedContact();
       } else {
         await saveTrustedContact();
       }
+
       return;
     }
 
@@ -361,9 +363,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Session ID is missing. Please reopen this session.',
-          ),
+          content: const Text('Session ID is missing. Please reopen this session.'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -377,7 +377,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
     try {
       await sessionsRepository.updateSessionStatus(
-        sessionId: _runtimeSessionId,
+        sessionId: vm.sessionId,
         status: 'started',
       );
 
@@ -391,7 +391,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionStartedMessage(vm.title)),
+          content: Text('Session started: ${vm.title}'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -399,7 +399,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionStartErrorWithDetails(e.toString())),
+          content: Text('Failed to start session: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -412,7 +412,6 @@ class _InterventionScreenState extends State<InterventionScreen> {
   }
 
   Future<void> completeSession() async {
-    final l10n = AppLocalizations.of(context)!;
     if (vm.isTrustedContact) {
       Navigator.of(context).maybePop();
       return;
@@ -422,9 +421,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Session ID is missing. Please reopen this session.',
-          ),
+          content: const Text('Session ID is missing. Please reopen this session.'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -438,7 +435,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
     try {
       await sessionsRepository.updateSessionStatus(
-        sessionId: _runtimeSessionId,
+        sessionId: vm.sessionId,
         status: 'completed',
       );
 
@@ -452,7 +449,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionCompletedMessage(vm.title)),
+          content: Text('Session completed: ${vm.title}'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -462,7 +459,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.interventionCompleteError(e.toString())),
+          content: Text('Failed to complete session: $e'),
           backgroundColor: Colors.red.shade600,
           behavior: SnackBarBehavior.floating,
         ),
@@ -479,7 +476,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
     if (!sessionStarted || sessionCompleted || sessionCancelled) return;
 
     await sessionsRepository.updateSessionStatus(
-      sessionId: _runtimeSessionId,
+      sessionId: vm.sessionId,
       status: 'cancelled',
     );
     sessionCancelled = true;
@@ -523,8 +520,9 @@ class _InterventionScreenState extends State<InterventionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     if (isPreview && !vm.isTrustedContact) {
-      return _buildRecommendationPreview(context, l10n);
+      return _buildRecommendationPreview(context);
     }
 
     return Scaffold(
@@ -534,14 +532,13 @@ class _InterventionScreenState extends State<InterventionScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon:
-              isCancellingBeforeClose
-                  ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2.2),
-                  )
-                  : const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: isCancellingBeforeClose
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                )
+              : const Icon(Icons.arrow_back_ios_new_rounded),
           color: AppColors.textPrimary,
           onPressed: isCancellingBeforeClose ? null : handleClose,
         ),
@@ -561,7 +558,7 @@ class _InterventionScreenState extends State<InterventionScreen> {
             _SimpleInfoCard(
               color: vm.accentColor.withValues(alpha: 0.14),
               title: vm.title,
-              subtitle: vm.summaryText,
+              subtitle: _localizedSummary(context, vm.sessionType),
               icon: vm.icon,
               iconColor: vm.accentColor,
             ),
@@ -569,54 +566,18 @@ class _InterventionScreenState extends State<InterventionScreen> {
             _SimpleInfoCard(
               color: AppColors.surface,
               title: l10n.interventionSessionCardTitle,
-              subtitle: vm.subtitle,
+              subtitle: l10n.interventionSessionMinutesMeta(
+                vm.durationMinutes,
+                _localizedSessionLabel(context, vm.sessionType),
+              ),
               icon: Icons.play_circle_fill_rounded,
               iconColor: AppColors.primary,
             ),
             const SizedBox(height: 16),
-            if (sessionStarted && !sessionCompleted && !sessionCancelled) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F1E4),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF5D7E57),
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      l10n.interventionSessionActive,
-                      style: TextStyle(
-                        color: Color(0xFF5D7E57),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed:
-                    isStarting || isCompleting
-                        ? null
-                        : (sessionStarted &&
-                            !sessionCompleted &&
-                            !sessionCancelled)
-                        ? completeSession
-                        : startSession,
+                onPressed: isStarting ? null : startSession,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -626,33 +587,18 @@ class _InterventionScreenState extends State<InterventionScreen> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                 ),
-                icon:
-                    (isStarting || isCompleting)
-                        ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        )
-                        : Icon(
-                          (sessionStarted &&
-                                  !sessionCompleted &&
-                                  !sessionCancelled)
-                              ? Icons.check_rounded
-                              : Icons.play_arrow_rounded,
+                icon: isStarting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
                         ),
+                      )
+                    : const Icon(Icons.play_arrow_rounded),
                 label: Text(
-                  isStarting
-                      ? l10n.interventionStarting
-                      : isCompleting
-                      ? l10n.interventionCompleting
-                      : (sessionStarted &&
-                          !sessionCompleted &&
-                          !sessionCancelled)
-                      ? l10n.interventionCompleteCta
-                      : l10n.interventionStartCta,
+                  isStarting ? l10n.interventionStarting : l10n.interventionStartSession,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -675,8 +621,8 @@ class _InterventionScreenState extends State<InterventionScreen> {
                   ),
                 ),
                 child: Text(
-                  l10n.cancel,
-                  style: TextStyle(
+                  l10n.interventionClose,
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
@@ -690,15 +636,10 @@ class _InterventionScreenState extends State<InterventionScreen> {
     );
   }
 
-  Scaffold _buildRecommendationPreview(
-    BuildContext context,
-    AppLocalizations l10n,
-  ) {
+  Scaffold _buildRecommendationPreview(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    const previewDuration = 10;
     const previewFlowerAsset = 'assets/images/flower_mild.png';
-    final previewActionTitle = l10n.interventionDurationMinutesLabel(
-      vm.durationMinutes,
-      vm.title,
-    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
@@ -727,14 +668,14 @@ class _InterventionScreenState extends State<InterventionScreen> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              _FixedRecoveryHeroCard(title: vm.title, subtitle: vm.summaryText),
+              const _FixedRecoveryHeroCard(),
               const SizedBox(height: 18),
               _RecommendationActionCard(
-                title: previewActionTitle,
-                buttonText:
-                    isStarting
-                        ? l10n.interventionStarting
-                        : l10n.interventionStartSession,
+                title: l10n.interventionSessionMinutesMeta(
+                  previewDuration,
+                  _localizedSessionLabel(context, vm.sessionType),
+                ),
+                buttonText: isStarting ? l10n.interventionStarting : l10n.interventionStartSession,
                 onStart: isStarting ? null : startPreviewSession,
                 isLoading: isStarting,
               ),
@@ -766,7 +707,9 @@ class _InterventionScreenState extends State<InterventionScreen> {
                 height: 376,
                 child: FittedBox(
                   fit: BoxFit.contain,
-                  child: Image.asset(previewFlowerAsset),
+                  child: Image.asset(
+                    previewFlowerAsset,
+                  ),
                 ),
               ),
               const SizedBox(height: 96),
@@ -802,7 +745,7 @@ class InterventionViewModel {
   final bool isTrustedContact;
 
   factory InterventionViewModel.fromArguments(
-    Map<String, dynamic> args, {
+    Map args, {
     UserContext? userContext,
   }) {
     final rawModeKey =
@@ -810,22 +753,16 @@ class InterventionViewModel {
             .toString()
             .trim();
     final rawTitle =
-        (args['title'] ??
-                args['modeTitle'] ??
-                args['sessionTitle'] ??
-                'Intervention')
+        (args['title'] ?? args['modeTitle'] ?? args['sessionTitle'] ?? 'Intervention')
             .toString()
             .trim();
-    final rawSessionId =
-        (args['sessionId'] ?? args['id'] ?? '').toString().trim();
+    final rawSessionId = (args['sessionId'] ?? args['id'] ?? '').toString().trim();
     final duration =
-        _readInt(
-          args['durationMinutes'] ?? args['duration'] ?? args['minutes'],
-        ) ??
-        10;
+        _readInt(args['durationMinutes'] ?? args['duration'] ?? args['minutes']) ??
+            10;
 
-    final sessionType = normalizeSessionModeKey(rawModeKey);
-    final isTrustedContact = sessionType == 'trusted_contact';
+    final sessionType = _normalizeModeKey(rawModeKey);
+    final isTrustedContact = sessionType == 'trustedcontact';
 
     return InterventionViewModel(
       sessionId: rawSessionId,
@@ -847,21 +784,40 @@ class InterventionViewModel {
     return int.tryParse(value.toString());
   }
 
-  static String _resolveTitle(String rawTitle, String sessionType) {
-    final trimmedTitle = rawTitle.trim();
-    final normalizedRawTitle = trimmedTitle.toLowerCase();
-
-    const blockedTitles = {
-      'intervention',
-      'active session',
-      'session',
-      'active',
-    };
-
-    if (trimmedTitle.isNotEmpty &&
-        !blockedTitles.contains(normalizedRawTitle)) {
-      return trimmedTitle;
+  static String _normalizeModeKey(String value) {
+    final normalized =
+        value.trim().toLowerCase().replaceAll('_', '').replaceAll('-', '');
+    switch (normalized) {
+      case 'calm':
+        return 'calm';
+      case 'energy':
+      case 'needenergy':
+        return 'energy';
+      case 'sleep':
+      case 'sleeppreparation':
+        return 'sleep';
+      case 'focus':
+      case 'wanttofocus':
+        return 'focus';
+      case 'quickreset':
+        return 'quickreset';
+      case 'recovery':
+        return 'recovery';
+      case 'urgenthelp':
+        return 'urgenthelp';
+      case 'softsupport':
+        return 'softsupport';
+      case 'visualcontact':
+        return 'visualcontact';
+      case 'trustedcontact':
+        return 'trustedcontact';
+      default:
+        return 'guided';
     }
+  }
+
+  static String _resolveTitle(String rawTitle, String sessionType) {
+    final normalizedRawTitle = rawTitle.trim().toLowerCase();
 
     if (sessionType == 'sleep') {
       return 'Подготовка ко сну';
@@ -876,11 +832,16 @@ class InterventionViewModel {
     }
 
     if (sessionType == 'energy' ||
+        sessionType == 'quickreset' ||
         sessionType == 'recovery' ||
         normalizedRawTitle.contains('recovery') ||
         normalizedRawTitle.contains('restore') ||
         normalizedRawTitle.contains('восстанов')) {
       return 'Восстановление';
+    }
+
+    if (rawTitle.isNotEmpty && rawTitle != 'Intervention') {
+      return rawTitle;
     }
 
     if (sessionType == 'trustedcontact') {
@@ -892,7 +853,7 @@ class InterventionViewModel {
 
   static String _buildSubtitle(String sessionType, int duration) {
     switch (sessionType) {
-      case 'trusted_contact':
+      case 'trustedcontact':
         return 'Быстрый доступ';
       case 'sleep':
         return '$duration минут • Подготовка ко сну';
@@ -901,6 +862,7 @@ class InterventionViewModel {
       case 'focus':
         return '$duration минут • Фокус';
       case 'energy':
+      case 'quickreset':
       case 'recovery':
       default:
         return '$duration минут • Восстановление';
@@ -916,13 +878,14 @@ class InterventionViewModel {
       case 'calm':
         return 'Формат подобран под ваше текущее состояние.';
       case 'energy':
+      case 'quickreset':
       case 'recovery':
         return 'Формат подобран под ваше текущее состояние.';
       case 'sleep':
         return 'Формат подобран под ваше текущее состояние.';
       case 'focus':
         return 'Формат подобран под ваше текущее состояние.';
-      case 'trusted_contact':
+      case 'trustedcontact':
         return 'Быстрый доступ к доверенному контакту.';
       default:
         return 'Формат подобран под ваше текущее состояние.';
@@ -937,9 +900,10 @@ class InterventionViewModel {
         return const Color(0xFF8EB7A4);
       case 'focus':
         return const Color(0xFFD7C3A5);
-      case 'trusted_contact':
+      case 'trustedcontact':
         return const Color(0xFFA17456);
       case 'energy':
+      case 'quickreset':
       case 'recovery':
       default:
         return const Color(0xFFDCC7A1);
@@ -952,11 +916,12 @@ class InterventionViewModel {
         return Icons.favorite_rounded;
       case 'calm':
       case 'energy':
+      case 'quickreset':
       case 'recovery':
         return Icons.self_improvement_rounded;
       case 'focus':
         return Icons.center_focus_strong_rounded;
-      case 'trusted_contact':
+      case 'trustedcontact':
         return Icons.phone_in_talk_rounded;
       default:
         return Icons.self_improvement_rounded;
@@ -965,13 +930,11 @@ class InterventionViewModel {
 }
 
 class _FixedRecoveryHeroCard extends StatelessWidget {
-  const _FixedRecoveryHeroCard({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
+  const _FixedRecoveryHeroCard();
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const accentColor = Color(0xFFE4B663);
 
     return Container(
@@ -1027,7 +990,7 @@ class _FixedRecoveryHeroCard extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  title,
+                  l10n.interventionQuickRecoveryTitle,
                   style: const TextStyle(
                     color: Color(0xFF5F7167),
                     fontSize: 18,
@@ -1040,7 +1003,7 @@ class _FixedRecoveryHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            subtitle,
+            l10n.interventionCurrentStateFormat,
             style: const TextStyle(
               color: Color(0xFF91A095),
               fontSize: 14,
@@ -1103,23 +1066,22 @@ class _RecommendationActionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(22),
                 ),
               ),
-              child:
-                  isLoading
-                      ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
-                        ),
-                      )
-                      : Text(
-                        buttonText,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.white,
                       ),
+                    )
+                  : Text(
+                      buttonText,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
           ),
         ],

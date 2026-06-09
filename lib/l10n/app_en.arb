@@ -504,99 +504,29 @@
       }
     }
   },
-  "interventionSessionLabel": "Session",
-  "interventionStart": "Start session",
+  "homeInterventionRecommendationTitle": "Recommended intervention",
+  "homeInterventionRecommendationTapHint": "Tap to open the recommended support mode.",
+  "interventionRecommendationScreenTitle": "Recommendation",
+  "interventionSessionCardTitle": "Session",
+  "interventionStartSession": "Start session",
   "interventionStarting": "Starting...",
   "interventionClose": "Close",
-  "interventionRecommendationTitle": "Recommendation",
-  "interventionCancelAndReturn": "Cancel and return",
-  "interventionTrustedContactLoadError": "Failed to load trusted contact: {error}",
-  "@interventionTrustedContactLoadError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionTrustedContactSaved": "Trusted contact saved",
-  "interventionTrustedContactSaveError": "Failed to save trusted contact: {error}",
-  "@interventionTrustedContactSaveError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionTrustedContactRemoved": "Trusted contact removed",
-  "interventionTrustedContactRemoveError": "Failed to remove trusted contact: {error}",
-  "@interventionTrustedContactRemoveError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionPhoneCallError": "Could not start a phone call.",
-  "interventionSmsOpenError": "Could not open the messaging app.",
-  "interventionTrustedContactSmsBody": "Hi {name}, I may need support right now. Please contact me when you can.",
-  "@interventionTrustedContactSmsBody": {
-    "placeholders": {
-      "name": {}
-    }
-  },
-  "interventionStartError": "Failed to start session. Please try again.",
-  "interventionStartErrorWithDetails": "Failed to start session: {error}",
-  "@interventionStartErrorWithDetails": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionMissingSessionId": "Session ID is missing. Please reopen this session.",
-  "interventionStartedMessage": "Session started: {title}",
-  "@interventionStartedMessage": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "interventionCompletedMessage": "Session completed: {title}",
-  "@interventionCompletedMessage": {
-    "placeholders": {
-      "title": {}
-    }
-  },
-  "interventionCompleteError": "Failed to complete session: {error}",
-  "@interventionCompleteError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionCloseError": "Failed to close session safely: {error}",
-  "@interventionCloseError": {
-    "placeholders": {
-      "error": {}
-    }
-  },
-  "interventionModeSleepTitle": "Sleep preparation",
-  "interventionModeCalmTitle": "Stabilization",
-  "interventionModeFocusTitle": "Focus",
-  "interventionModeRecoveryTitle": "Recovery",
-  "interventionModeTrustedContactTitle": "Trusted contact",
-  "interventionQuickAccessSubtitle": "Quick access",
-  "interventionSummaryGeneric": "This format is selected for your current state.",
-  "interventionSummaryTrustedContact": "Quick access to a trusted contact.",
-  "interventionDurationMinutesLabel": "{minutes} min • {title}",
-  "@interventionDurationMinutesLabel": {
+  "interventionCancelAndReturn": "Cancel and go back",
+  "interventionQuickRecoveryTitle": "Recommended quick\nrecovery",
+  "interventionCurrentStateFormat": "This format is matched to your current state",
+  "interventionQuickAccess": "Quick access",
+  "interventionSleepPreparationTitle": "Sleep preparation",
+  "interventionCalmTitle": "Stabilization",
+  "interventionFocusTitle": "Focus",
+  "interventionRecoveryTitle": "Recovery",
+  "interventionTrustedContactTitle": "Trusted contact",
+  "interventionTrustedContactQuickAccess": "Quick access",
+  "interventionTrustedContactSummary": "Quick access to a trusted contact.",
+  "interventionSessionMinutesMeta": "{minutes} min • {label}",
+  "@interventionSessionMinutesMeta": {
     "placeholders": {
       "minutes": {},
-      "title": {}
+      "label": {}
     }
-  },
-  "interventionRecommendedFastRecovery": "Fast recovery is recommended",
-  "interventionRecommendedFormatForState": "This format is selected for your current state.",
-  "homeInterventionRecommendationTitle": "Based on your current state, a short support session is recommended.",
-  "homeInterventionRecommendationTapHint": "Tap to open.",
-  "interventionRecommendationScreenTitle": "Recommendation",
-  "interventionFastRecoveryRecommended": "Fast recovery is recommended",
-  "interventionFormatSelectedForState": "This format is selected for your current state.",
-  "interventionStartSession": "Start session",
-  "interventionActiveSessionTitle": "Active session",
-  "interventionSessionCardTitle": "Session",
-  "interventionSessionActive": "Session active",
-  "interventionCompleting": "Completing...",
-  "interventionCompleteCta": "Complete session",
-  "interventionStartCta": "Start session"
+  }
 }

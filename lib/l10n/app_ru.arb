@@ -99,14 +99,14 @@
     }
   },
   "recommendedKeepRhythm": "Рекомендуется сохранить ритм",
-  "recommendedShortReset": "Рекомендуется короткий reset",
+  "recommendedShortReset": "Рекомендуется быстрое восстановление",
   "recommendedRecovery": "Рекомендуется восстановление",
   "recommendedUrgentHelp": "Рекомендуется срочная помощь",
   "recommendedHelp": "Рекомендуется помощь",
   "aiRecommendsFastCalming": "AI рекомендует быстрое успокоение",
   "aiRecommendsEnergyBoost": "AI рекомендует мягкий заряд энергии",
   "aiRecommendsCarefulRecovery": "AI рекомендует бережное восстановление",
-  "aiRecommendsShortPractice": "AI рекомендует короткую практику",
+  "aiRecommendsShortPractice": "Формат подобран под ваше текущее состояние",
   "aiRecommendsSuitableMode": "AI рекомендует подходящий режим",
   "stableStateDescription": "Состояние стабильно. Можно выбрать мягкий режим поддержки или оставить всё как есть.",
   "tensionStateDescription": "Есть признаки напряжения. Лучше сделать короткую паузу и мягко стабилизировать состояние.",
@@ -598,5 +598,22 @@
   "interventionSessionActive": "Сеанс активен",
   "interventionCompleting": "Завершение...",
   "interventionCompleteCta": "Завершить сеанс",
-  "interventionStartCta": "Начать сеанс"
+  "interventionStartCta": "Начать сеанс",
+  "interventionQuickRecoveryTitle": "Рекомендуется быстрое\nвосстановление",
+  "interventionCurrentStateFormat": "Формат подобран под ваше текущее состояние",
+  "interventionQuickAccess": "Быстрый доступ",
+  "interventionSleepPreparationTitle": "Подготовка ко сну",
+  "interventionCalmTitle": "Стабилизация",
+  "interventionFocusTitle": "Фокус",
+  "interventionRecoveryTitle": "Восстановление",
+  "interventionTrustedContactTitle": "Доверенный контакт",
+  "interventionTrustedContactQuickAccess": "Быстрый доступ",
+  "interventionTrustedContactSummary": "Быстрый доступ к доверенному контакту.",
+  "interventionSessionMinutesMeta": "{minutes} мин • {label}",
+  "@interventionSessionMinutesMeta": {
+    "placeholders": {
+      "minutes": {},
+      "label": {}
+    }
+  }
 }
