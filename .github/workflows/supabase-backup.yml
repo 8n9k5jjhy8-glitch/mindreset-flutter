@@ -22,14 +22,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17
       - run: |
+          set -euxo pipefail
           TS="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
           echo "TS=$TS" >> "$GITHUB_ENV"
-          mkdir -p $GITHUB_WORKSPACE/.backup
-          pg_dump --schema-only --no-owner --no-privileges -f "$GITHUB_WORKSPACE/.backup/schema-${TS}.sql"
-          pg_dump --data-only --no-owner --no-privileges --inserts -f "$GITHUB_WORKSPACE/.backup/data-${TS}.sql"
-          gzip -f $GITHUB_WORKSPACE/.backup/schema-${TS}.sql $GITHUB_WORKSPACE/.backup/data-${TS}.sql
+          mkdir -p backup
+          pg_dump --schema-only --no-owner --no-privileges -f "backup/schema-${TS}.sql"
+          pg_dump --data-only --no-owner --no-privileges --inserts -f "backup/data-${TS}.sql"
+          ls -la backup/
+          gzip -f "backup/schema-${TS}.sql" "backup/data-${TS}.sql"
+          ls -la backup/
       - uses: actions/upload-artifact@v4
         with:
           name: supabase-backup-${{ env.TS }}
-          path: .backup/*.gz
+          path: backup/
           retention-days: 30
